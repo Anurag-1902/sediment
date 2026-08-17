@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import "./globals.css";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
 });
 
 export const dynamic = "force-dynamic";
@@ -16,7 +20,7 @@ export const fetchCache = "force-no-store";
 export const metadata: Metadata = {
   title: "Sediment — AI-Powered Standup Automation",
   description:
-    "Automate daily standups via Slack, track project progress with AI, and query team updates from a unified dashboard.",
+    "Sediment runs daily syncs in Slack, captures dev updates, and lets business users query team progress. Your standups, layered into living context.",
 };
 
 export default function RootLayout({
@@ -28,12 +32,10 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("font-sans", inter.variable, jetbrainsMono.variable)}
+      className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
     >
-      <body className="font-sans antialiased">
-        <Providers>
-          <main>{children}</main>
-        </Providers>
+      <body className="bg-charcoal text-text font-sans">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
