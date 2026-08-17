@@ -73,9 +73,9 @@ export default function ProjectDetailPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
           {project.isActive ? (
-            <Badge className="bg-emerald-50 text-emerald-700">Active</Badge>
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-0">Active</Badge>
           ) : (
-            <Badge variant="outline">Paused</Badge>
+            <Badge className="bg-stone-500/10 text-stone-400 border-0">Paused</Badge>
           )}
         </div>
         <p className="text-muted-foreground mt-1">{project.description || "No description"}</p>
@@ -161,7 +161,7 @@ function ProjectOverview({
             <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-600">{stats?.inProgressCount ?? 0}</div>
+            <div className="text-3xl font-bold text-amber">{stats?.inProgressCount ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -169,7 +169,7 @@ function ProjectOverview({
             <CardTitle className="text-sm font-medium text-muted-foreground">Blockers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-rose-600">{stats?.blockerCount ?? 0}</div>
+            <div className="text-3xl font-bold text-rose-400">{stats?.blockerCount ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -257,7 +257,7 @@ function ProjectUpdates({ projectId }: { projectId: string }) {
           </CardHeader>
           <CardContent className="space-y-2">
             {u.aiSummary && (
-              <div className="rounded-lg bg-indigo-50 p-3 text-sm text-indigo-900">
+              <div className="rounded-lg bg-amber/5 border border-amber/10 p-3 text-sm text-amber-light">
                 <span className="font-semibold">AI Summary:</span> {u.aiSummary}
               </div>
             )}
@@ -285,10 +285,10 @@ function ProjectTasks({ projectId }: { projectId: string }) {
   });
 
   const columns: Array<{ key: "OPEN" | "IN_PROGRESS" | "BLOCKED" | "CLOSED"; label: string; color: string }> = [
-    { key: "OPEN", label: "Open", color: "bg-slate-50" },
-    { key: "IN_PROGRESS", label: "In Progress", color: "bg-amber-50" },
-    { key: "BLOCKED", label: "Blocked", color: "bg-rose-50" },
-    { key: "CLOSED", label: "Closed", color: "bg-emerald-50" },
+    { key: "OPEN", label: "Open", color: "bg-stone-500/5" },
+    { key: "IN_PROGRESS", label: "In Progress", color: "bg-amber/5" },
+    { key: "BLOCKED", label: "Blocked", color: "bg-rose-500/5" },
+    { key: "CLOSED", label: "Closed", color: "bg-emerald-500/5" },
   ];
 
   if (isLoading) {
@@ -311,7 +311,7 @@ function ProjectTasks({ projectId }: { projectId: string }) {
               {tasks?.filter((t: { status: string }) => t.status === col.key).length ?? 0}
             </Badge>
           </div>
-          <div className={`rounded-xl border p-3 space-y-2 min-h-[200px] ${col.color}`}>
+          <div className={`rounded-xl border border-border-custom p-3 space-y-2 min-h-[200px] ${col.color}`}>
             {tasks
               ?.filter((t: { status: string }) => t.status === col.key)
               .map((task: {
@@ -328,9 +328,9 @@ function ProjectTasks({ projectId }: { projectId: string }) {
                       <span className="text-xs text-muted-foreground">
                         {task.assignedTo?.name ?? "Unassigned"}
                       </span>
-                      <select
-                        className="text-xs border rounded px-2 py-1 bg-background"
-                        value={task.status}
+                        <select
+                          className="text-xs border border-border rounded px-2 py-1 bg-charcoal text-text"
+                          value={task.status}
                         onChange={(e) =>
                           updateStatus.mutate({
                             id: task.id,
@@ -391,7 +391,7 @@ function AskAI({ projectId, projectName }: { projectId: string; projectName: str
             <Button
               type="submit"
               disabled={askMutation.isPending || !question.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-amber hover:bg-amber-light text-charcoal"
             >
               {askMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -401,7 +401,7 @@ function AskAI({ projectId, projectName }: { projectId: string; projectName: str
             </Button>
           </form>
           {askMutation.data && (
-            <div className="mt-4 rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap">
+            <div className="mt-4 rounded-lg bg-surface-raised p-4 text-sm whitespace-pre-wrap">
               {askMutation.data.answer}
             </div>
           )}
@@ -527,7 +527,7 @@ function ProjectSettings({ project }: { project: any }) {
               <div className="space-y-2">
                 <Label>Sync Time</Label>
                 <select
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border bg-charcoal px-3 py-2 text-sm text-text"
                   value={syncTime}
                   onChange={(e) => setSyncTime(e.target.value)}
                 >
@@ -541,7 +541,7 @@ function ProjectSettings({ project }: { project: any }) {
               <div className="space-y-2">
                 <Label>Timezone</Label>
                 <select
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border bg-charcoal px-3 py-2 text-sm text-text"
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
                 >
@@ -559,7 +559,7 @@ function ProjectSettings({ project }: { project: any }) {
                 id="s-active"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border bg-charcoal text-amber focus:ring-amber"
               />
               <Label htmlFor="s-active" className="text-sm font-normal mb-0">
                 Active (enable daily syncs)
@@ -567,7 +567,7 @@ function ProjectSettings({ project }: { project: any }) {
             </div>
             <Button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-amber hover:bg-amber-light text-charcoal"
               disabled={updateProject.isPending}
             >
               {updateProject.isPending ? "Saving..." : "Save Changes"}
@@ -576,9 +576,9 @@ function ProjectSettings({ project }: { project: any }) {
         </CardContent>
       </Card>
 
-      <Card className="border-rose-200">
+      <Card className="border-rose-500/20">
         <CardHeader>
-          <CardTitle className="text-rose-600">Danger Zone</CardTitle>
+          <CardTitle className="text-rose-400">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">

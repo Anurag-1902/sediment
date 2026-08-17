@@ -128,7 +128,7 @@ export default function NewProjectPage() {
                 rows={6}
                 placeholder="Project goals, tech stack, current milestones..."
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-text-muted">
                 This context helps AI understand and summarize updates.
               </p>
             </div>
@@ -235,13 +235,13 @@ export default function NewProjectPage() {
                 {handles.map((h) => (
                   <span
                     key={h}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm"
+                    className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-3 py-1 text-sm text-text"
                   >
                     {h}
                     <button
                       type="button"
                       onClick={() => handleRemoveHandle(h)}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-text-muted hover:text-text"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -252,7 +252,7 @@ export default function NewProjectPage() {
 
             <Button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              className="w-full bg-amber hover:bg-amber-light text-charcoal font-medium"
               disabled={createProject.isPending}
             >
               {createProject.isPending ? (
