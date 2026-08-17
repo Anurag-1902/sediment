@@ -36,21 +36,21 @@ export function AuthCard({
   backLabel = "Back",
 }: AuthCardProps) {
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-muted/30 px-4 py-10">
+    <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-start justify-center px-4 py-6">
       <div className="w-full max-w-[440px]">
         {backHref ? (
           <Link
             href={backHref}
-            className="mb-3 -ml-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="mb-3 -ml-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface-raised hover:text-text"
           >
             <ArrowLeft className="size-4" />
             {backLabel}
           </Link>
         ) : null}
-        <Card className="rounded-2xl border-border/80 bg-card/95 shadow-sm">
+        <Card className="rounded-2xl border-border-custom bg-surface shadow-sm">
           <CardHeader className="gap-4 pb-2">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex size-11 items-center justify-center rounded-xl border bg-muted text-foreground">
+              <div className="flex size-11 items-center justify-center rounded-xl border border-border-custom bg-surface-raised text-amber">
                 {icon}
               </div>
               {steps && typeof currentStep === "number" ? (
@@ -65,8 +65,8 @@ export function AuthCard({
                         className={cn(
                           "flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium",
                           isActive
-                            ? "bg-foreground text-background"
-                            : "bg-muted text-muted-foreground"
+                            ? "bg-amber text-charcoal"
+                            : "bg-surface-raised text-text-muted"
                         )}
                       >
                         {isDone ? (
@@ -82,17 +82,17 @@ export function AuthCard({
               ) : null}
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-2xl font-semibold tracking-normal">
+              <CardTitle className="text-2xl font-semibold tracking-normal text-text">
                 {title}
               </CardTitle>
-              <CardDescription className="leading-6">
+              <CardDescription className="leading-6 text-text-muted">
                 {description}
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="pt-2">{children}</CardContent>
           {footer ? (
-            <CardFooter className="flex-col gap-3 border-t bg-muted/35">
+            <CardFooter className="flex-col gap-3 border-t border-border-custom bg-surface-raised/50">
               {footer}
             </CardFooter>
           ) : null}

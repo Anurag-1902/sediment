@@ -41,11 +41,11 @@ export default function SignInPage() {
       description="Sign in with your email and password to continue."
       icon={<LogIn className="size-5" />}
       footer={
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-text-muted">
           Don&apos;t have an account?{" "}
           <Link
             href="/sign-up"
-            className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+            className="font-medium text-text underline underline-offset-4 hover:text-amber"
           >
             Create account
           </Link>
@@ -55,33 +55,33 @@ export default function SignInPage() {
       <div className="space-y-5">
         <GoogleAuthButton />
         <div className="flex items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs font-medium uppercase text-muted-foreground">
+          <Separator className="flex-1 bg-border-custom" />
+          <span className="text-xs font-medium uppercase text-text-muted">
             or
           </span>
-          <Separator className="flex-1" />
+          <Separator className="flex-1 bg-border-custom" />
         </div>
       </div>
       <form onSubmit={handleSubmit} className="mt-5 space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-text">Email</Label>
           <Input
             id="email"
             type="email"
             placeholder="name@example.com"
             required
             autoComplete="email"
-            className="h-10"
+            className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-text">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              className="text-sm font-medium text-text-muted underline underline-offset-4 hover:text-text"
             >
               Forgot password?
             </Link>
@@ -91,7 +91,7 @@ export default function SignInPage() {
             type="password"
             required
             autoComplete="current-password"
-            className="h-10"
+            className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -99,7 +99,7 @@ export default function SignInPage() {
         <Button
           type="submit"
           size="lg"
-          className="w-full"
+          className="w-full bg-amber font-semibold text-charcoal hover:bg-amber-light"
           disabled={isSigningIn}
         >
           {isSigningIn ? "Signing in..." : "Sign In"}

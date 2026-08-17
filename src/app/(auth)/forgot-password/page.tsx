@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
       backHref="/sign-in"
       backLabel="Sign in"
       footer={
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-text-muted">
           {isAwaitingCode ? (
             otpRequestsRemaining === null ? (
               "The newest reset code replaces any earlier code."
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
               Remembered your password?{" "}
               <Link
                 href="/sign-in"
-                className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                className="font-medium text-text underline underline-offset-4 hover:text-amber"
               >
                 Sign in
               </Link>
@@ -133,9 +133,9 @@ export default function ForgotPasswordPage() {
     >
       {isAwaitingCode ? (
         <form onSubmit={handleResetPassword} className="space-y-5">
-          <div className="rounded-xl border bg-muted/35 p-4">
+          <div className="rounded-xl border border-border-custom bg-surface-raised p-4">
             <div className="space-y-2">
-              <Label htmlFor="otp">Reset code</Label>
+              <Label htmlFor="otp" className="text-text">Reset code</Label>
               <InputOTP
                 id="otp"
                 maxLength={6}
@@ -149,7 +149,7 @@ export default function ForgotPasswordPage() {
                     <InputOTPSlot
                       key={index}
                       index={index}
-                      className="size-10 bg-background text-base"
+                      className="size-10 border-border-custom bg-charcoal text-base text-text"
                     />
                   ))}
                 </InputOTPGroup>
@@ -157,37 +157,37 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">New password</Label>
+            <Label htmlFor="password" className="text-text">New password</Label>
             <Input
               id="password"
               type="password"
               required
               minLength={8}
               autoComplete="new-password"
-              className="h-10"
+              className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Label htmlFor="confirmPassword" className="text-text">Confirm password</Label>
             <Input
               id="confirmPassword"
               type="password"
               required
               minLength={8}
               autoComplete="new-password"
-              className="h-10"
+              className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               aria-invalid={passwordMismatch}
             />
             {passwordMismatch ? (
-              <p className="text-sm text-destructive">
+              <p className="text-sm text-rose-400">
                 Passwords do not match.
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-muted">
                 Use at least 8 characters.
               </p>
             )}
@@ -195,7 +195,7 @@ export default function ForgotPasswordPage() {
           <Button
             type="submit"
             size="lg"
-            className="w-full"
+            className="w-full bg-amber font-semibold text-charcoal hover:bg-amber-light"
             disabled={
               otp.length !== 6 ||
               password.length < 8 ||
@@ -211,7 +211,7 @@ export default function ForgotPasswordPage() {
             type="button"
             variant="outline"
             size="lg"
-            className="w-full"
+            className="w-full border-border-custom text-text hover:bg-surface-raised hover:text-text"
             disabled={resendCooldown > 0 || isRequestingPasswordReset}
             onClick={handleResend}
           >
@@ -225,14 +225,14 @@ export default function ForgotPasswordPage() {
       ) : (
         <form onSubmit={handleRequestReset} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-text">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="name@example.com"
               required
               autoComplete="email"
-              className="h-10"
+              className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -240,7 +240,7 @@ export default function ForgotPasswordPage() {
           <Button
             type="submit"
             size="lg"
-            className="w-full"
+            className="w-full bg-amber font-semibold text-charcoal hover:bg-amber-light"
             disabled={isRequestingPasswordReset}
           >
             {isRequestingPasswordReset ? "Sending..." : "Send Reset Code"}

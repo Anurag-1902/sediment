@@ -94,16 +94,16 @@ export default function SignUpPage() {
       steps={["Account", "Verify"]}
       footer={
         isAwaitingVerification ? (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-text-muted">
             Wrong email? Refresh this page and create the account again with the
             correct address.
           </p>
         ) : (
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-text-muted">
             Already have an account?{" "}
             <Link
               href="/sign-in"
-              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+              className="font-medium text-text underline underline-offset-4 hover:text-amber"
             >
               Sign in
             </Link>
@@ -113,9 +113,9 @@ export default function SignUpPage() {
     >
       {isAwaitingVerification ? (
         <form onSubmit={handleVerify} className="space-y-5">
-          <div className="rounded-xl border bg-muted/35 p-4">
+          <div className="rounded-xl border border-border-custom bg-surface-raised p-4">
             <div className="space-y-2">
-              <Label htmlFor="otp">Verification code</Label>
+              <Label htmlFor="otp" className="text-text">Verification code</Label>
               <InputOTP
                 id="otp"
                 maxLength={6}
@@ -129,12 +129,12 @@ export default function SignUpPage() {
                     <InputOTPSlot
                       key={index}
                       index={index}
-                      className="size-10 bg-background text-base"
+                      className="size-10 border-border-custom bg-charcoal text-base text-text"
                     />
                   ))}
                 </InputOTPGroup>
               </InputOTP>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-text-muted">
                 {otpRequestsRemaining === null
                   ? "The newest code replaces any earlier code."
                   : `${otpRequestsRemaining} code request${
@@ -146,7 +146,7 @@ export default function SignUpPage() {
           <Button
             type="submit"
             size="lg"
-            className="w-full"
+            className="w-full bg-amber font-semibold text-charcoal hover:bg-amber-light"
             disabled={otp.length !== 6 || isVerifyingEmailOtp}
           >
             {isVerifyingEmailOtp ? "Verifying..." : "Verify and Sign In"}
@@ -155,7 +155,7 @@ export default function SignUpPage() {
             type="button"
             variant="outline"
             size="lg"
-            className="w-full"
+            className="w-full border-border-custom text-text hover:bg-surface-raised hover:text-text"
             disabled={resendCooldown > 0 || isResendingVerificationOtp}
             onClick={handleResend}
           >
@@ -171,59 +171,59 @@ export default function SignUpPage() {
           <div className="space-y-5">
             <GoogleAuthButton />
             <div className="flex items-center gap-3">
-              <Separator className="flex-1" />
-              <span className="text-xs font-medium uppercase text-muted-foreground">
+              <Separator className="flex-1 bg-border-custom" />
+              <span className="text-xs font-medium uppercase text-text-muted">
                 or
               </span>
-              <Separator className="flex-1" />
+              <Separator className="flex-1 bg-border-custom" />
             </div>
           </div>
           <form onSubmit={handleSignUp} className="mt-5 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className="text-text">Name</Label>
               <Input
                 id="name"
                 placeholder="John Doe"
                 required
                 autoComplete="name"
-                className="h-10"
+                className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-text">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
                 required
                 autoComplete="email"
-                className="h-10"
+                className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-text">Password</Label>
               <Input
                 id="password"
                 type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="h-10"
+                className="h-10 border-border-custom bg-charcoal text-text placeholder:text-text-muted focus-visible:ring-amber"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-muted">
                 Use at least 8 characters.
               </p>
             </div>
             <Button
               type="submit"
               size="lg"
-              className="w-full"
+              className="w-full bg-amber font-semibold text-charcoal hover:bg-amber-light"
               disabled={isSigningUp}
             >
               {isSigningUp ? "Creating account..." : "Continue"}
