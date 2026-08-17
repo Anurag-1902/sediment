@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -141,60 +142,31 @@ export default function Home() {
           <div className="relative">
             {/* Main card with gradient layers */}
             <div className="relative overflow-hidden rounded-2xl border border-border-custom bg-slate">
-              {/* Sediment layers visual (CSS) */}
-              <div className="relative h-[420px] lg:h-[480px]">
-                {/* Layered stripe effect */}
-                <div className="absolute inset-0">
-                  <div className="absolute bottom-0 h-[60%] w-full bg-gradient-to-r from-charcoal via-slate to-transparent" />
-                  {/* Amber/golden horizontal bands */}
-                  <div className="absolute top-[10%] h-8 w-full bg-amber/10" />
-                  <div className="absolute top-[25%] h-3 w-full bg-amber/20" />
-                  <div className="absolute top-[30%] h-10 w-full bg-amber/5" />
-                  <div className="absolute top-[42%] h-5 w-full bg-amber-light/15" />
-                  <div className="absolute top-[55%] h-8 w-full bg-amber/10" />
-                  <div className="absolute top-[65%] h-4 w-full bg-amber-dark/20" />
-                  <div className="absolute top-[72%] h-6 w-full bg-amber/5" />
-                  <div className="absolute top-[82%] h-10 w-full bg-amber-light/10" />
-                  
-                  {/* Diagonal warm bands */}
-                  <div className="absolute left-0 top-0 h-full w-full">
-                    <div className="absolute left-[20%] top-0 h-[120%] w-[80px] rotate-[15deg] bg-amber/5 blur-sm" />
-                    <div className="absolute left-[50%] top-0 h-[120%] w-[60px] rotate-[15deg] bg-amber-light/5 blur-sm" />
-                    <div className="absolute left-[70%] top-0 h-[120%] w-[100px] rotate-[10deg] bg-amber-dark/5 blur-sm" />
-                  </div>
-                </div>
+              <div className="relative h-[420px] lg:h-[480px] overflow-hidden rounded-2xl">
+                <Image
+                  src="/hero-sediment.jpg"
+                  alt="Geological sediment layers"
+                  fill
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-charcoal/40 via-transparent to-transparent" />
+              </div>
 
-                {/* Subtle texture lines */}
-                <div className="absolute inset-0 opacity-20">
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-full bg-amber/10"
-                      style={{
-                        top: `${5 + i * 5}%`,
-                        height: `${Math.random() * 2 + 0.5}px`,
-                        opacity: Math.random() * 0.5,
-                        transform: `rotate(${Math.random() * 2 - 1}deg)`,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Floating card */}
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="rounded-xl border border-border-custom bg-surface-raised/90 p-4 backdrop-blur">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber/10">
-                        <Sparkles className="h-4 w-4 text-amber" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-text">
-                          &quot;What&apos;s the team working on this sprint?&quot;
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          Query your team&apos;s context naturally
-                        </p>
-                      </div>
+              {/* Floating card */}
+              <div className="absolute bottom-6 left-6 right-6">
+                <div className="rounded-xl border border-border-custom bg-surface-raised/90 p-4 backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber/10">
+                      <Sparkles className="h-4 w-4 text-amber" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text">
+                        &quot;What&apos;s the team working on this sprint?&quot;
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        Query your team&apos;s context naturally
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -226,38 +198,15 @@ export default function Home() {
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {/* Seamless Team Sync */}
           <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
-            {/* Connected nodes visual (CSS) */}
-            <div className="relative h-[260px]">
-              <div className="absolute inset-0 bg-charcoal">
-                {/* Flowing golden lines */}
-                <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="line1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#D97706" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#D97706" stopOpacity="0.05" />
-                    </linearGradient>
-                    <linearGradient id="line2" x1="100%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#FBBF24" stopOpacity="0.03" />
-                    </linearGradient>
-                  </defs>
-                  {/* Curved paths */}
-                  <path d="M 20,100 Q 120,20 220,150 T 420,80" fill="none" stroke="url(#line1)" strokeWidth="2" />
-                  <path d="M 50,180 Q 150,80 250,200 T 450,120" fill="none" stroke="url(#line2)" strokeWidth="1.5" />
-                  <path d="M 0,200 Q 100,120 200,240 T 400,160" fill="none" stroke="url(#line1)" strokeWidth="1" />
-                  <path d="M 80,50 Q 180,150 280,60 T 480,140" fill="none" stroke="url(#line2)" strokeWidth="1.5" />
-                </svg>
-
-                {/* Node dots */}
-                <div className="absolute left-[15%] top-[35%] h-3 w-3 rounded-full bg-amber/40 blur-[2px]" />
-                <div className="absolute left-[50%] top-[55%] h-2.5 w-2.5 rounded-full bg-amber-light/30 blur-[1px]" />
-                <div className="absolute left-[75%] top-[25%] h-3.5 w-3.5 rounded-full bg-amber/35 blur-[2px]" />
-                <div className="absolute left-[35%] top-[70%] h-2 w-2 rounded-full bg-amber-light/25" />
-                <div className="absolute left-[65%] top-[65%] h-2.5 w-2.5 rounded-full bg-amber-dark/30" />
-                <div className="absolute left-[85%] top-[45%] h-2 w-2 rounded-full bg-amber/20" />
-              </div>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/50 to-transparent" />
+            {/* Connected nodes visual */}
+            <div className="relative h-[260px] overflow-hidden">
+              <Image
+                src="/feature-sync.jpg"
+                alt="Connected team sync"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/70 to-transparent" />
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -273,22 +222,15 @@ export default function Home() {
 
           {/* Living Context */}
           <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
-            {/* 3D sediment layers visual (CSS) */}
-            <div className="relative h-[260px]">
-              <div className="absolute inset-0 bg-charcoal">
-                {/* Horizontal sediment bands */}
-                <div className="absolute left-[5%] right-[5%] top-[10%] h-[12%] rounded-full bg-amber/8 blur-sm" />
-                <div className="absolute left-[8%] right-[3%] top-[25%] h-[10%] rounded-full bg-amber-light/6 blur-sm" />
-                <div className="absolute left-[3%] right-[8%] top-[38%] h-[14%] rounded-full bg-amber-dark/7 blur-sm" />
-                <div className="absolute left-[10%] right-[5%] top-[55%] h-[11%] rounded-full bg-amber/9 blur-sm" />
-                <div className="absolute left-[5%] right-[10%] top-[70%] h-[13%] rounded-full bg-amber-light/5 blur-sm" />
-                <div className="absolute left-[7%] right-[4%] top-[85%] h-[10%] rounded-full bg-amber/6 blur-sm" />
-
-                {/* Glow effects */}
-                <div className="absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber/5 blur-3xl" />
-              </div>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/50 to-transparent" />
+            {/* 3D sediment layers visual */}
+            <div className="relative h-[260px] overflow-hidden">
+              <Image
+                src="/feature-context.jpg"
+                alt="Living context sediment layers"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/70 to-transparent" />
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-6">
