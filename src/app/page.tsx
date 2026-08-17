@@ -13,13 +13,13 @@ export default function Home() {
       <section className="container mx-auto px-4 py-24 text-center">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="inline-flex items-center rounded-full border bg-muted/50 px-4 py-1.5 text-sm font-medium">
-            <Layers className="mr-2 h-4 w-4 text-indigo-600" />
+            <Layers className="mr-2 h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             AI-Powered Standup Automation
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl">
             Automate standups.
             <br />
-            <span className="text-indigo-600">Track what matters.</span>
+            <span className="text-indigo-600 dark:text-indigo-400">Track what matters.</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             Sediment layers developer updates into deep project understanding.
@@ -55,8 +55,8 @@ export default function Home() {
         <div className="container mx-auto px-4 py-20">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="rounded-xl border bg-card p-6 shadow-sm">
-              <div className="mb-4 inline-flex rounded-lg bg-indigo-50 p-3">
-                <MessageSquare className="h-6 w-6 text-indigo-600" />
+              <div className="mb-4 inline-flex rounded-lg bg-indigo-500/10 p-3">
+                <MessageSquare className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="mb-2 text-lg font-semibold">Slack Integration</h3>
               <p className="text-muted-foreground">
@@ -65,8 +65,8 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm">
-              <div className="mb-4 inline-flex rounded-lg bg-emerald-50 p-3">
-                <Brain className="h-6 w-6 text-emerald-600" />
+              <div className="mb-4 inline-flex rounded-lg bg-emerald-500/10 p-3">
+                <Brain className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="mb-2 text-lg font-semibold">AI Summaries</h3>
               <p className="text-muted-foreground">
@@ -75,8 +75,8 @@ export default function Home() {
               </p>
             </div>
             <div className="rounded-xl border bg-card p-6 shadow-sm">
-              <div className="mb-4 inline-flex rounded-lg bg-amber-50 p-3">
-                <Clock className="h-6 w-6 text-amber-600" />
+              <div className="mb-4 inline-flex rounded-lg bg-amber-500/10 p-3">
+                <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="mb-2 text-lg font-semibold">Smart Follow-ups</h3>
               <p className="text-muted-foreground">
