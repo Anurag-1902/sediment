@@ -45,9 +45,14 @@ export async function extractTasks(rawText: string) {
   const system = `You are a task extraction assistant. Given a developer standup update, extract discrete tasks mentioned. Return ONLY valid JSON in the format: {"tasks": [{"description": string, "status": "OPEN" | "IN_PROGRESS" | "BLOCKED" | "CLOSED"}]}. Infer status from the text: "finished" = CLOSED, "blocked" = BLOCKED, "working on" = IN_PROGRESS, "plan to" = OPEN.`;
   const result = await ai.chat<string>(rawText, { system });
   try {
-    const parsed = JSON.parse(result);
+    const cleaned = result
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/, "")
+      .trim();
+    const parsed = JSON.parse(cleaned);
     return parsed.tasks as Array<{ description: string; status: string }>;
   } catch {
+    console.error("extractTasks JSON parse failed. Raw AI output:", result);
     return [] as Array<{ description: string; status: string }>;
   }
 }

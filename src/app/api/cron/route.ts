@@ -1,27 +1,48 @@
-import { getSlackClient, postSyncMessage } from "@/server/slack";
+import { postSyncMessage } from "@/server/slack";
 import { getPrisma } from "@/lib/krutai-server";
-import { summarizeUpdate, extractTasks, updateProjectContext } from "@/server/ai";
 
 export const dynamic = "force-dynamic";
+
+function getLocalTimeInTimezone(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+  return `${hh}:${mm}`;
+}
 
 export async function GET() {
   const prisma = await getPrisma();
   const now = new Date();
-  const currentHour = now.getHours().toString().padStart(2, "0");
-  const currentMinute = now.getMinutes().toString().padStart(2, "0");
-  const currentTime = `${currentHour}:${currentMinute}`;
 
-  const dueProjects = await prisma.project.findMany({
-    where: {
-      isActive: true,
-      syncTime: currentTime,
-    },
+  const activeProjects = await prisma.project.findMany({
+    where: { isActive: true },
     include: { members: true },
   });
 
   const results = [];
 
-  for (const project of dueProjects) {
+  for (const project of activeProjects) {
+    const localTime = getLocalTimeInTimezone(now, project.syncTimezone);
+    if (localTime !== project.syncTime) continue;
+
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+    const recentSession = await prisma.syncSession.findFirst({
+      where: {
+        projectId: project.id,
+        scheduledAt: { gte: fiveMinutesAgo },
+      },
+    });
+
+    if (recentSession) {
+      results.push({ projectId: project.id, status: "skipped", reason: "recent_session_exists" });
+      continue;
+    }
+
     try {
       const session = await prisma.syncSession.create({
         data: {
@@ -48,5 +69,5 @@ export async function GET() {
     }
   }
 
-  return Response.json({ ok: true, time: currentTime, sent: results.length, results });
+  return Response.json({ ok: true, sent: results.length, results });
 }

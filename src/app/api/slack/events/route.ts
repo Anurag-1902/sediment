@@ -4,6 +4,16 @@ import { extractTasks, summarizeUpdate, updateProjectContext } from "@/server/ai
 
 export const dynamic = "force-dynamic";
 
+let cachedBotUserId: string | null = null;
+
+async function getBotUserId() {
+  if (cachedBotUserId) return cachedBotUserId;
+  const client = getSlackClient();
+  const result = await client.auth.test();
+  cachedBotUserId = result.user_id ?? null;
+  return cachedBotUserId;
+}
+
 function requireEnv(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing env: ${name}`);
@@ -30,8 +40,18 @@ export async function POST(request: Request) {
   if (body.type === "event_callback") {
     const event = body.event;
 
-    if (event.type === "message" && event.thread_ts && event.user && event.text) {
-      await handleThreadReply(event);
+    if (event.type === "message") {
+      if (event.bot_id || event.subtype) {
+        return Response.json({ ok: true });
+      }
+      const botUserId = await getBotUserId();
+      if (event.user === botUserId) {
+        return Response.json({ ok: true });
+      }
+
+      if (event.thread_ts && event.user && event.text) {
+        await handleThreadReply(event);
+      }
     }
 
     if (event.type === "app_mention") {
@@ -60,6 +80,11 @@ async function handleThreadReply(event: {
 
   if (!session) return;
 
+  const member = await prisma.projectMember.findFirst({
+    where: { projectId: session.projectId, slackUserId: event.user },
+  });
+  if (!member) return;
+
   const aiSummary = await summarizeUpdate(event.text);
   const extractedTasks = await extractTasks(event.text);
 
@@ -86,10 +111,6 @@ async function handleThreadReply(event: {
               ? "CLOSED"
               : "OPEN";
 
-    const member = await prisma.projectMember.findFirst({
-      where: { projectId: session.projectId, slackUserId: event.user },
-    });
-
     const existingTask = await prisma.task.findFirst({
       where: {
         projectId: session.projectId,
@@ -112,7 +133,7 @@ async function handleThreadReply(event: {
           projectId: session.projectId,
           description: taskData.description,
           status: normalizedStatus,
-          assignedToUserId: member?.userId ?? null,
+          assignedToUserId: member.userId ?? null,
           lastMentionedAt: new Date(),
           createdFromUpdateId: update.id,
         },
@@ -145,63 +166,5 @@ async function handleThreadReply(event: {
         updatedBy: session.project.ownerId,
       },
     });
-  }
-
-  const totalMembers = await prisma.projectMember.count({
-    where: { projectId: session.projectId },
-  });
-  const updateCount = await prisma.devUpdate.count({
-    where: { sessionId: session.id },
-  });
-
-  if (updateCount >= totalMembers) {
-    await prisma.syncSession.update({
-      where: { id: session.id },
-      data: { status: "COMPLETED" },
-    });
-
-    const project = await prisma.project.findUnique({
-      where: { id: session.projectId },
-      include: { members: true },
-    });
-
-    if (project) {
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
-      const openTasks = await prisma.task.findMany({
-        where: {
-          projectId: session.projectId,
-          status: { in: ["OPEN", "IN_PROGRESS"] },
-          lastMentionedAt: { lt: thirtyMinAgo },
-        },
-      });
-
-      for (const task of openTasks) {
-        const member = await prisma.projectMember.findFirst({
-          where: { projectId: session.projectId, userId: task.assignedToUserId },
-        });
-
-        if (member) {
-          try {
-            const client = getSlackClient();
-            const followUpResult = await client.chat.postMessage({
-              channel: project.slackChannelId,
-              thread_ts: event.thread_ts,
-              text: `<@${member.slackUserId}> — any status on *${task.description}*?`,
-              icon_emoji: ":question:",
-            });
-
-            await prisma.followUp.create({
-              data: {
-                taskId: task.id,
-                sessionId: session.id,
-                slackMessageTs: followUpResult.ts ?? undefined,
-              },
-            });
-          } catch (e) {
-            console.error("Follow-up failed:", e);
-          }
-        }
-      }
-    }
   }
 }

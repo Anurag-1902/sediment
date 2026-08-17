@@ -25,6 +25,12 @@ export function verifySlackRequest(
   rawBody: string,
   signature: string
 ) {
+  const ts = parseInt(timestamp, 10);
+  const now = Math.floor(Date.now() / 1000);
+  if (isNaN(ts) || Math.abs(now - ts) > 300) {
+    return false;
+  }
+
   const crypto = require("crypto");
   const hmac = crypto.createHmac("sha256", signingSecret);
   const data = `v0:${timestamp}:${rawBody}`;

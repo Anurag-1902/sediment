@@ -21,7 +21,6 @@ Copy `.env.example` to `.env` and fill in the values:
 DATABASE_URL=postgresql://user:pass@host:port/db?schema=public
 KRUTAI_API_KEY=your_krutai_api_key
 KRUTAI_SERVER_URL=http://krut-ai-backend:8000
-KRUTAI_PROJECT_ID=your_project_id
 NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=http://localhost:3000
 APP_URL=http://localhost:3000
@@ -32,6 +31,8 @@ SLACK_BOT_TOKEN=xoxb-your-bot-token
 GOOGLE_CLIENT_ID=optional_google_oauth_client_id
 GOOGLE_CLIENT_SECRET=optional_google_oauth_client_secret
 ```
+
+**Important:** After deployment on Krut, update `NEXTAUTH_URL` and `APP_URL` to match your deployed public URL exactly (e.g., `https://your-project.projects.krut.ai`).
 
 ## Setup
 
@@ -56,23 +57,38 @@ GOOGLE_CLIENT_SECRET=optional_google_oauth_client_secret
 
 1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app.
 2. Choose "From an app manifest" and paste the contents of `slack-manifest.json`.
-3. Replace `https://your-app-url.com` with your actual app URL.
+3. **Replace all placeholder URLs** (`https://your-app-url.com`) in the manifest with your actual deployed app URL before submitting.
 4. Install the app to your workspace.
 5. Copy the Bot User OAuth Token to `SLACK_BOT_TOKEN`.
 6. Copy the Signing Secret to `SLACK_SIGNING_SECRET`.
 7. Copy the Client ID and Client Secret to `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
 
-## Cron Job
+## Cron Jobs
 
-The app exposes `/api/cron` which checks every minute for projects whose sync time matches the current time and sends a Slack sync message.
+The app requires **two cron endpoints** to be triggered every minute:
 
-For local development, you can hit this endpoint manually or set up a simple cron job with curl:
+### `/api/cron` — Daily Sync Trigger
+Checks every minute for active projects whose `syncTime` matches the current time in their configured `syncTimezone`, then posts a Slack sync message.
+
+### `/api/cron/followups` — Follow-up Trigger
+Checks every minute for active sync sessions that were scheduled 28–32 minutes ago. For each session, it finds open/in-progress tasks that were **not** mentioned in any dev update during that session, sends a threaded follow-up to the assigned developer, and marks the session as completed.
+
+For local development, set up two cron entries:
 
 ```bash
 */1 * * * * curl -s http://localhost:3000/api/cron > /dev/null 2>&1
+*/1 * * * * curl -s http://localhost:3000/api/cron/followups > /dev/null 2>&1
 ```
 
-For production deployment on Krut, configure a cron trigger pointing to `/api/cron`.
+For production deployment on Krut, configure two cron triggers pointing to the respective endpoints.
+
+## ProjectMember Slack Handle Resolution
+
+When creating or updating a project, you input Slack handles like `@dev1`. Sediment resolves these to real Slack user IDs internally and stores both:
+- `slackUserId`: the resolved ID (e.g., `U01234ABC`) used for Slack API calls
+- `slackHandle`: the original handle (e.g., `@dev1`) displayed in the UI
+
+If a handle cannot be resolved, the API returns a `BAD_REQUEST` error naming the invalid handle.
 
 ## How It Works
 
@@ -81,12 +97,12 @@ For production deployment on Krut, configure a cron trigger pointing to `/api/cr
 3. **Developers** reply in the thread with their updates.
 4. The backend receives thread replies via the Slack Events API, processes them with Gemini AI to extract tasks and generate summaries.
 5. Tasks are tracked in a Kanban board (Open / In Progress / Blocked / Closed).
-6. After all participants reply or 30 minutes pass, the bot sends follow-ups for unmentioned open/in-progress tasks.
+6. ~30 minutes after the sync, the follow-up cron sends nudges for unmentioned open/in-progress tasks.
 7. Business users can query the AI from the dashboard for insights like "What's blocking the frontend team?"
 
 ## Features
 
-- **Automated Slack Syncs**: Daily prompts at configurable times.
+- **Automated Slack Syncs**: Daily prompts at configurable times, respecting per-project timezones.
 - **AI Summaries**: Gemini extracts tasks, blockers, and progress from raw messages.
 - **Living Project Context**: The AI appends summaries to a project context that evolves over time.
 - **Kanban Board**: Track tasks across statuses.

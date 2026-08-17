@@ -129,8 +129,9 @@ model ProjectMember {
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   userId      String?     @map("user_id")
   user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  slackUserId String      @map("slack_user_id")
-  role        String      @default("MEMBER")
+  slackUserId   String      @map("slack_user_id")
+  slackHandle   String?     @map("slack_handle")
+  role          String      @default("MEMBER")
 
   @@unique([projectId, slackUserId])
   @@map("project_member")

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { resolveSlackUser } from "@/server/slack";
 
 export const projectRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -73,17 +74,28 @@ export const projectRouter = createTRPCRouter({
       const { memberHandles, ...data } = input;
       const userId = ctx.session.user.id;
 
-      const members = memberHandles.map((handle) => ({
-        slackUserId: handle,
-        role: "MEMBER",
-      }));
+      const resolvedMembers = [];
+      for (const handle of memberHandles) {
+        const user = await resolveSlackUser(handle);
+        if (!user) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Could not resolve Slack handle: ${handle}`,
+          });
+        }
+        resolvedMembers.push({
+          slackUserId: user.id,
+          slackHandle: handle,
+          role: "MEMBER",
+        });
+      }
 
       const project = await prisma.project.create({
         data: {
           ...data,
           ownerId: userId,
           members: {
-            create: members,
+            create: resolvedMembers,
           },
         },
         include: { members: true },
@@ -121,15 +133,28 @@ export const projectRouter = createTRPCRouter({
       }
 
       if (memberHandles !== undefined) {
+        const resolvedMembers = [];
+        for (const handle of memberHandles) {
+          const user = await resolveSlackUser(handle);
+          if (!user) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Could not resolve Slack handle: ${handle}`,
+            });
+          }
+          resolvedMembers.push({
+            projectId: id,
+            slackUserId: user.id,
+            slackHandle: handle,
+            role: "MEMBER",
+          });
+        }
+
         await prisma.projectMember.deleteMany({
           where: { projectId: id },
         });
         await prisma.projectMember.createMany({
-          data: memberHandles.map((handle) => ({
-            projectId: id,
-            slackUserId: handle,
-            role: "MEMBER",
-          })),
+          data: resolvedMembers,
         });
       }
 
