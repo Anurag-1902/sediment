@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import {
   Layers,
   Slack,
@@ -17,11 +16,12 @@ import {
   ChevronDown,
   MessageCircle,
   Database,
+  Hash,
 } from "lucide-react";
 
 const features = [
   {
-    icon: Slack,
+    icon: Hash,
     title: "Slack-Native Standups",
     description:
       "Automated daily prompts that meet devs where they work. No context switching, no extra apps.",
@@ -76,14 +76,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Ambient glow */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-amber/5 blur-3xl" />
         <div className="absolute top-1/3 right-0 h-96 w-96 rounded-full bg-amber/5 blur-3xl" />
       </div>
 
-      {/* Hero */}
-      <section className="relative container mx-auto px-6 py-24 lg:py-32">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
+      {/* ==================== HERO ==================== */}
+      <section className="relative mx-auto max-w-7xl px-6 py-24 lg:py-32">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-8">
+          {/* Left - Text */}
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-border-custom bg-surface px-4 py-1.5 text-sm text-text-muted">
               <Slack className="h-4 w-4 text-amber" />
@@ -107,21 +108,26 @@ export default function Home() {
               <Link href="/sign-up">
                 <Button
                   size="lg"
-                  className="bg-amber hover:bg-amber-light text-charcoal font-semibold gap-2"
+                  className="bg-amber font-semibold text-charcoal hover:bg-amber-light"
                 >
-                  <Slack className="h-4 w-4" />
+                  <Slack className="mr-2 h-4 w-4" />
                   Add to Slack
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors flex items-center gap-1">
+              <a
+                href="#how-it-works"
+                className="flex items-center gap-1 text-sm text-text-muted transition-colors hover:text-text"
+              >
                 See how it works
                 <ArrowRight className="h-3 w-3" />
-              </Link>
+              </a>
             </div>
 
-            <div className="pt-4">
-              <p className="text-sm text-text-muted mb-4">Trusted by engineering teams at</p>
+            <div className="border-t border-border-custom pt-6">
+              <p className="mb-4 text-sm text-text-muted">
+                Trusted by engineering teams at
+              </p>
               <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-text-muted/60">
                 <span>Vercel</span>
                 <span>Linear</span>
@@ -131,30 +137,66 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Right - Visual */}
           <div className="relative">
-            <div className="relative rounded-2xl border border-border-custom bg-surface overflow-hidden">
-              <Image
-                src="/hero.png"
-                alt="Sediment layers visualization"
-                width={600}
-                height={500}
-                className="w-full object-cover"
-                priority
-              />
-            </div>
-            {/* Floating card */}
-            <div className="absolute -bottom-4 -left-4 lg:-left-8 rounded-xl border border-border-custom bg-surface-raised/90 backdrop-blur p-4 shadow-2xl">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber/10">
-                  <Sparkles className="h-4 w-4 text-amber" />
+            {/* Main card with gradient layers */}
+            <div className="relative overflow-hidden rounded-2xl border border-border-custom bg-slate">
+              {/* Sediment layers visual (CSS) */}
+              <div className="relative h-[420px] lg:h-[480px]">
+                {/* Layered stripe effect */}
+                <div className="absolute inset-0">
+                  <div className="absolute bottom-0 h-[60%] w-full bg-gradient-to-r from-charcoal via-slate to-transparent" />
+                  {/* Amber/golden horizontal bands */}
+                  <div className="absolute top-[10%] h-8 w-full bg-amber/10" />
+                  <div className="absolute top-[25%] h-3 w-full bg-amber/20" />
+                  <div className="absolute top-[30%] h-10 w-full bg-amber/5" />
+                  <div className="absolute top-[42%] h-5 w-full bg-amber-light/15" />
+                  <div className="absolute top-[55%] h-8 w-full bg-amber/10" />
+                  <div className="absolute top-[65%] h-4 w-full bg-amber-dark/20" />
+                  <div className="absolute top-[72%] h-6 w-full bg-amber/5" />
+                  <div className="absolute top-[82%] h-10 w-full bg-amber-light/10" />
+                  
+                  {/* Diagonal warm bands */}
+                  <div className="absolute left-0 top-0 h-full w-full">
+                    <div className="absolute left-[20%] top-0 h-[120%] w-[80px] rotate-[15deg] bg-amber/5 blur-sm" />
+                    <div className="absolute left-[50%] top-0 h-[120%] w-[60px] rotate-[15deg] bg-amber-light/5 blur-sm" />
+                    <div className="absolute left-[70%] top-0 h-[120%] w-[100px] rotate-[10deg] bg-amber-dark/5 blur-sm" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-text">
-                    &quot;What&apos;s the team working on this sprint?&quot;
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    Query your team&apos;s context naturally
-                  </p>
+
+                {/* Subtle texture lines */}
+                <div className="absolute inset-0 opacity-20">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-full bg-amber/10"
+                      style={{
+                        top: `${5 + i * 5}%`,
+                        height: `${Math.random() * 2 + 0.5}px`,
+                        opacity: Math.random() * 0.5,
+                        transform: `rotate(${Math.random() * 2 - 1}deg)`,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Floating card */}
+                <div className="absolute bottom-6 left-6 right-6">
+                  <div className="rounded-xl border border-border-custom bg-surface-raised/90 p-4 backdrop-blur">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber/10">
+                        <Sparkles className="h-4 w-4 text-amber" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-text">
+                          &quot;What&apos;s the team working on this sprint?&quot;
+                        </p>
+                        <p className="text-xs text-text-muted">
+                          Query your team&apos;s context naturally
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -162,14 +204,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="relative container mx-auto px-6 py-24">
-        <div className="text-center mb-16">
+      {/* ==================== FEATURES ==================== */}
+      <section id="features" className="relative mx-auto max-w-7xl px-6 py-24">
+        <div className="mb-16 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             Standups that actually work
           </h2>
-          <p className="mt-4 text-lg text-text-muted">
-            Capture context without the ceremony. Query progress without the meetings.
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
+            Capture context without the ceremony. Query progress without the
+            meetings.
           </p>
         </div>
 
@@ -179,36 +222,78 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Showcase cards */}
+        {/* Showcase Cards */}
         <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <div className="group relative overflow-hidden rounded-xl border border-border-custom">
-            <Image
-              src="/feature-sync.png"
-              alt="Seamless Team Sync"
-              width={600}
-              height={300}
-              className="w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/60 to-transparent" />
+          {/* Seamless Team Sync */}
+          <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
+            {/* Connected nodes visual (CSS) */}
+            <div className="relative h-[260px]">
+              <div className="absolute inset-0 bg-charcoal">
+                {/* Flowing golden lines */}
+                <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="line1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#D97706" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#D97706" stopOpacity="0.05" />
+                    </linearGradient>
+                    <linearGradient id="line2" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#FBBF24" stopOpacity="0.03" />
+                    </linearGradient>
+                  </defs>
+                  {/* Curved paths */}
+                  <path d="M 20,100 Q 120,20 220,150 T 420,80" fill="none" stroke="url(#line1)" strokeWidth="2" />
+                  <path d="M 50,180 Q 150,80 250,200 T 450,120" fill="none" stroke="url(#line2)" strokeWidth="1.5" />
+                  <path d="M 0,200 Q 100,120 200,240 T 400,160" fill="none" stroke="url(#line1)" strokeWidth="1" />
+                  <path d="M 80,50 Q 180,150 280,60 T 480,140" fill="none" stroke="url(#line2)" strokeWidth="1.5" />
+                </svg>
+
+                {/* Node dots */}
+                <div className="absolute left-[15%] top-[35%] h-3 w-3 rounded-full bg-amber/40 blur-[2px]" />
+                <div className="absolute left-[50%] top-[55%] h-2.5 w-2.5 rounded-full bg-amber-light/30 blur-[1px]" />
+                <div className="absolute left-[75%] top-[25%] h-3.5 w-3.5 rounded-full bg-amber/35 blur-[2px]" />
+                <div className="absolute left-[35%] top-[70%] h-2 w-2 rounded-full bg-amber-light/25" />
+                <div className="absolute left-[65%] top-[65%] h-2.5 w-2.5 rounded-full bg-amber-dark/30" />
+                <div className="absolute left-[85%] top-[45%] h-2 w-2 rounded-full bg-amber/20" />
+              </div>
+
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/50 to-transparent" />
+            </div>
+
             <div className="absolute bottom-0 left-0 right-0 p-6">
-              <h3 className="text-xl font-semibold text-text">Seamless Team Sync</h3>
-              <p className="mt-2 text-sm text-text-muted">
-                Daily prompts that feel natural, responses that capture real context.
+              <h3 className="text-xl font-semibold text-text">
+                Seamless Team Sync
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                Daily prompts that feel natural, responses that capture real
+                context.
               </p>
             </div>
           </div>
-          <div className="group relative overflow-hidden rounded-xl border border-border-custom">
-            <Image
-              src="/feature-context.png"
-              alt="Living Context"
-              width={600}
-              height={300}
-              className="w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/60 to-transparent" />
+
+          {/* Living Context */}
+          <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
+            {/* 3D sediment layers visual (CSS) */}
+            <div className="relative h-[260px]">
+              <div className="absolute inset-0 bg-charcoal">
+                {/* Horizontal sediment bands */}
+                <div className="absolute left-[5%] right-[5%] top-[10%] h-[12%] rounded-full bg-amber/8 blur-sm" />
+                <div className="absolute left-[8%] right-[3%] top-[25%] h-[10%] rounded-full bg-amber-light/6 blur-sm" />
+                <div className="absolute left-[3%] right-[8%] top-[38%] h-[14%] rounded-full bg-amber-dark/7 blur-sm" />
+                <div className="absolute left-[10%] right-[5%] top-[55%] h-[11%] rounded-full bg-amber/9 blur-sm" />
+                <div className="absolute left-[5%] right-[10%] top-[70%] h-[13%] rounded-full bg-amber-light/5 blur-sm" />
+                <div className="absolute left-[7%] right-[4%] top-[85%] h-[10%] rounded-full bg-amber/6 blur-sm" />
+
+                {/* Glow effects */}
+                <div className="absolute left-1/2 top-1/2 h-32 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber/5 blur-3xl" />
+              </div>
+
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/50 to-transparent" />
+            </div>
+
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <h3 className="text-xl font-semibold text-text">Living Context</h3>
-              <p className="mt-2 text-sm text-text-muted">
+              <p className="mt-2 text-sm leading-relaxed text-text-muted">
                 Every update adds a layer. Query months of progress in seconds.
               </p>
             </div>
@@ -216,20 +301,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it Works */}
-      <section id="how-it-works" className="relative container mx-auto px-6 py-24">
-        <div className="text-center mb-16">
+      {/* ==================== HOW IT WORKS ==================== */}
+      <section id="how-it-works" className="relative mx-auto max-w-7xl px-6 py-24">
+        <div className="mb-16 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             How Sediment works
           </h2>
-          <p className="mt-4 text-lg text-text-muted">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
             Three simple steps to transform standups from ceremony into insight.
           </p>
         </div>
 
         <div className="space-y-24">
           {/* Step 01 */}
-          <div className="grid gap-8 lg:grid-cols-2 items-center">
+          <div className="grid items-center gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">01</span>
@@ -238,14 +323,14 @@ export default function Home() {
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-text">Daily Slack Prompts</h3>
-              <p className="text-text-muted leading-relaxed">
-                Sediment sends a simple async prompt to each team member. &quot;What did you
-                work on? Any blockers?"
+              <p className="leading-relaxed text-text-muted">
+                Sediment sends a simple async prompt to each team member.
+                &quot;What did you work on? Any blockers?&quot;
               </p>
             </div>
             <div className="rounded-xl border border-border-custom bg-surface p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded bg-amber text-charcoal text-sm font-bold">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded bg-amber text-sm font-bold text-charcoal">
                   S
                 </div>
                 <div>
@@ -253,53 +338,62 @@ export default function Home() {
                   <p className="text-xs text-text-muted">9:00 AM</p>
                 </div>
               </div>
-              <p className="text-sm text-text-muted">
+              <p className="mt-4 text-sm text-text-muted">
                 Hey Sarah! Quick check-in — what are you working on today?
               </p>
             </div>
           </div>
 
-          {/* Arrow */}
           <div className="flex justify-center">
             <ChevronDown className="h-6 w-6 text-border-custom" />
           </div>
 
           {/* Step 02 */}
-          <div className="grid gap-8 lg:grid-cols-2 items-center lg:flex-row-reverse">
-            <div className="rounded-xl border border-border-custom bg-surface p-6 order-2 lg:order-1">
-              <pre className="font-mono text-sm text-text-muted overflow-x-auto">
-                <code>
-                  <span className="text-amber">+</span> context.add({"\n"}
-                  {"  "}user: <span className="text-amber-light">&quot;sarah&quot;</span>,{"\n"}
-                  {"  "}work: <span className="text-amber-light">&quot;auth flow refactor&quot;</span>,{"\n"}
-                  {"  "}blocker: <span className="text-text-muted">null</span>,{"\n"}
-                  {"  "}timestamp: <span className="text-amber-light">&quot;2024-01-15&quot;</span>{"\n"}
-                  )
-                </code>
-              </pre>
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            <div className="order-2 lg:order-1">
+              <div className="rounded-xl border border-border-custom bg-surface p-6">
+                <pre className="overflow-x-auto font-mono text-sm text-text-muted">
+                  <code>
+                    <span className="text-amber">+</span> context.add({"\n"}
+                    {"  "}user:{" "}
+                    <span className="text-amber-light">&quot;sarah&quot;</span>,{"\n"}
+                    {"  "}work:{" "}
+                    <span className="text-amber-light">
+                      &quot;auth flow refactor&quot;
+                    </span>
+                    ,{"\n"}
+                    {"  "}blocker:{" "}
+                    <span className="text-text-muted">null</span>,{"\n"}
+                    {"  "}timestamp:{" "}
+                    <span className="text-amber-light">&quot;2024-01-15&quot;</span>
+                    {"\n"})
+                  </code>
+                </pre>
+              </div>
             </div>
-            <div className="space-y-4 order-1 lg:order-2">
+            <div className="order-1 space-y-4 lg:order-2">
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">02</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
                   <Database className="h-5 w-5 text-amber" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-text">Context Accumulates</h3>
-              <p className="text-text-muted leading-relaxed">
-                Responses are parsed, structured, and layered into your project&apos;s
-                living memory. Blockers are flagged automatically.
+              <h3 className="text-2xl font-bold text-text">
+                Context Accumulates
+              </h3>
+              <p className="leading-relaxed text-text-muted">
+                Responses are parsed, structured, and layered into your
+                project&apos;s living memory. Blockers are flagged automatically.
               </p>
             </div>
           </div>
 
-          {/* Arrow */}
           <div className="flex justify-center">
             <ChevronDown className="h-6 w-6 text-border-custom" />
           </div>
 
           {/* Step 03 */}
-          <div className="grid gap-8 lg:grid-cols-2 items-center">
+          <div className="grid items-center gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">03</span>
@@ -308,13 +402,13 @@ export default function Home() {
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-text">Query Naturally</h3>
-              <p className="text-text-muted leading-relaxed">
+              <p className="leading-relaxed text-text-muted">
                 PMs and stakeholders ask questions in plain English. Get instant,
                 accurate answers from accumulated context.
               </p>
             </div>
-            <div className="rounded-xl border border-border-custom bg-surface p-6 space-y-4">
-              <div className="flex items-center gap-3 rounded-lg border border-border-custom bg-charcoal px-4 py-3">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 rounded-lg border border-border-custom bg-surface px-4 py-3">
                 <Search className="h-4 w-4 text-amber" />
                 <span className="text-sm text-text">
                   What&apos;s blocking the auth release?
@@ -331,34 +425,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative container mx-auto px-6 py-24">
+      {/* ==================== CTA ==================== */}
+      <section className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber/5 blur-3xl" />
         </div>
         <div className="relative rounded-2xl border border-border-custom bg-surface px-8 py-16 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber to-amber-dark mb-8">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber to-amber-dark">
             <Layers className="h-8 w-8 text-charcoal" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             Ready to build your team&apos;s{" "}
             <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
               living context?
             </span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">
-            Join hundreds of engineering teams using Sediment to run better standups
-            and surface insights faster.
+            Join hundreds of engineering teams using Sediment to run better
+            standups and surface insights faster.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/sign-up">
               <Button
                 size="lg"
-                className="bg-amber hover:bg-amber-light text-charcoal font-semibold gap-2"
+                className="bg-amber font-semibold text-charcoal hover:bg-amber-light"
               >
-                <Slack className="h-4 w-4" />
+                <Slack className="mr-2 h-4 w-4" />
                 Add to Slack — It&apos;s Free
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Button
