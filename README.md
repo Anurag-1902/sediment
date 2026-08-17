@@ -1,109 +1,94 @@
-# Krutai Next.js Template
+# Sediment — AI-Powered Standup Automation Platform
 
-This is a Next.js app template for Krutai projects. Use this README together with `AI_RULES.md` as the project guide for setup, package choices, and existing app wiring.
+Automate daily standups via Slack, use AI to track project progress, and query team updates from a unified dashboard.
 
-## Current status
+## Tech Stack
 
-- Authentication is already implemented with `@krutai/auth`.
-- Google OAuth sign-in is available through the app-owned callback route at `/api/auth/google/callback`.
-- The typed tRPC API is available under `src/app/api/trpc/[trpc]`.
-- All application API work must go through tRPC. Do not add REST endpoints for app features unless the route is a third-party webhook, Next.js platform route, or another explicitly required protocol.
-- Client auth state is exposed through `src/hooks/use-auth.ts`.
-- Sign-in and sign-up pages are already available under `src/app/(auth)`.
-- The navbar is already implemented in `src/components/navbar.tsx` and attached globally in `src/app/layout.tsx`, so it appears around `src/app/page.tsx` and the rest of the app pages.
+- Next.js 15 (App Router) + TypeScript
+- tRPC for type-safe API layer
+- Prisma ORM + PostgreSQL
+- Better Auth (KrutAuth) for authentication (email/password + Google OAuth)
+- Tailwind CSS + shadcn/ui components
+- Slack Web API + Slack Events API
+- Gemini via KrutAI for all AI operations
+- Node-cron for scheduled sync messages
 
-## Getting started
+## Environment Variables
 
-Install dependencies:
+Copy `.env.example` to `.env` and fill in the values:
+
+```env
+DATABASE_URL=postgresql://user:pass@host:port/db?schema=public
+KRUTAI_API_KEY=your_krutai_api_key
+KRUTAI_SERVER_URL=http://krut-ai-backend:8000
+KRUTAI_PROJECT_ID=your_project_id
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+APP_URL=http://localhost:3000
+SLACK_CLIENT_ID=your_slack_client_id
+SLACK_CLIENT_SECRET=your_slack_client_secret
+SLACK_SIGNING_SECRET=your_slack_signing_secret
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+GOOGLE_CLIENT_ID=optional_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=optional_google_oauth_client_secret
+```
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   bun install
+   ```
+
+2. Push the Prisma schema to your database:
+   ```bash
+   bunx prisma db push
+   ```
+
+3. Run the development server:
+   ```bash
+   bun dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Slack App Setup
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app.
+2. Choose "From an app manifest" and paste the contents of `slack-manifest.json`.
+3. Replace `https://your-app-url.com` with your actual app URL.
+4. Install the app to your workspace.
+5. Copy the Bot User OAuth Token to `SLACK_BOT_TOKEN`.
+6. Copy the Signing Secret to `SLACK_SIGNING_SECRET`.
+7. Copy the Client ID and Client Secret to `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
+
+## Cron Job
+
+The app exposes `/api/cron` which checks every minute for projects whose sync time matches the current time and sends a Slack sync message.
+
+For local development, you can hit this endpoint manually or set up a simple cron job with curl:
 
 ```bash
-bun install
+*/1 * * * * curl -s http://localhost:3000/api/cron > /dev/null 2>&1
 ```
 
-Run the development server:
+For production deployment on Krut, configure a cron trigger pointing to `/api/cron`.
 
-```bash
-bun run dev
-```
+## How It Works
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+1. **Business users** sign up and create projects with a Slack channel, daily sync time, and team member handles.
+2. At the scheduled time, the bot posts a daily sync message in the chosen Slack channel.
+3. **Developers** reply in the thread with their updates.
+4. The backend receives thread replies via the Slack Events API, processes them with Gemini AI to extract tasks and generate summaries.
+5. Tasks are tracked in a Kanban board (Open / In Progress / Blocked / Closed).
+6. After all participants reply or 30 minutes pass, the bot sends follow-ups for unmentioned open/in-progress tasks.
+7. Business users can query the AI from the dashboard for insights like "What's blocking the frontend team?"
 
-## Scripts
+## Features
 
-```bash
-bun run dev
-bun run build
-bun run start
-```
-
-`bun run build` runs `prisma generate` before the Next.js build.
-
-## AI rules: task to package
-
-Use `AI_RULES.md` as the canonical guide for which Krutai packages to use. Prefer these packages over ad-hoc libraries or alternate stacks when the task matches the area below.
-
-Important API rule: this template uses tRPC as the only application API layer. Add new server operations as tRPC routers/procedures in `src/server/api`, expose them through `src/server/api/root.ts`, and call them from clients with `src/lib/trpc.ts`. Do not create REST API routes for normal app features.
-
-| Area | Always use | Do not substitute with |
-| --- | --- | --- |
-| Authentication and sessions | `@krutai/auth` | Raw `better-auth` wiring in app code without going through this template's integration pattern |
-| Database engine | PostgreSQL | SQLite, MySQL, or other primary application persistence by default |
-| KrutAI-managed database config | `@krutai/db-service` | Hard-coded KrutAI database URLs or custom config fetchers |
-| LLM and AI calls, streaming chat | `@krutai/ai-provider` | Direct vendor SDKs when `@krutai/ai-provider` already covers the use case |
-| Live voice AI conversations | `@krutai/ai-live-conversation` | Hand-rolled browser audio/WebSocket flows for supported Gemini Live voice features |
-| Email OAuth, list/read, send, filter | `@krutai/email-services` | One-off Gmail API fetches or random SMTP helpers for supported flows |
-| Excel and spreadsheet compare | `@krutai/excel-comparison` | Manual `xlsx` or `exceljs` diff logic for supported comparison features |
-| MCP server connections and tool calls | `@krutai/mcp-client` | Direct MCP transport/OAuth/session handling when the Krut backend should manage it |
-| Role-based access control | `@krutai/rbac` | Custom permission engines for standard role/permission checks |
-| File upload and retrieval | `@krutai/uploadfile-services` | One-off S3 upload clients or custom file retrieval wrappers for KrutAI-backed files |
-| Background jobs and workers | `@krutai/worker` | Raw BullMQ setup when jobs should use KrutAI worker config and management |
-
-
-All Krutai SDK-style packages expect `KRUTAI_API_KEY` and any related package-specific environment variables unless the code path is purely local.
-
-## Auth implementation notes
-
-Treat `@krutai/auth` as the single entry point for sign-in, sign-out, sessions, and other auth flows. Do not add a parallel Better Auth setup for the same app.
-
-Most auth-related app operations are exposed through tRPC procedures. Third-party protocol entry points, such as Google OAuth redirects and callbacks, live in App Router API routes.
-
-Google OAuth works without app-owned Google credentials by using the Krut-managed Google callback flow. `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are optional, but if you provide one you must provide both. Set them only when this app owns the Google OAuth client, then register this exact redirect URI in Google Cloud:
-
-```text
-${APP_URL}/api/auth/google/callback
-```
-
-Set `NEXT_PUBLIC_APP_URL` or `APP_URL` in deployed environments when the request origin is not the public app origin.
-
-Relevant files:
-
-- `src/lib/krutai-server.ts` initializes `KrutAuth`.
-- `src/app/api/trpc/[trpc]/route.ts` exposes the tRPC API at `/api/trpc`.
-- `src/server/api/root.ts` merges the tRPC routers.
-- `src/server/api/routers/auth.ts` handles email sign-in, sign-up, sign-out, and session reads.
-- `src/app/api/auth/google/start/route.ts` starts Google OAuth and stores temporary state in HTTP-only cookies.
-- `src/app/api/auth/google/callback/route.ts` completes Google OAuth and writes the normal session cookie.
-- `src/server/api/routers/users.ts` exposes user queries backed by Prisma.
-- `src/hooks/use-auth.ts` exposes auth mutations and session state to client components.
-- `src/components/navbar.tsx` renders sign-in/sign-up buttons for guests and a user menu for signed-in users.
-- `src/app/layout.tsx` wraps every page with the tRPC-enabled `QueryProvider`, `TooltipProvider`, `Toaster`, and `Navbar`.
-
-
-## Project structure
-
-```text
-src/app                 App Router pages, layouts, and API routes
-src/app/(auth)          Sign-in and sign-up pages
-src/app/api/trpc        tRPC route handler
-src/components          Shared app components
-src/components/ui       Reusable UI primitives
-src/hooks               Client hooks
-src/lib                 Server utilities and shared helpers
-src/server/api          tRPC context, root router, and feature routers
-prisma                  Prisma schema and database configuration
-```
-
-## Learn more
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [AI_RULES.md](./AI_RULES.md)
+- **Automated Slack Syncs**: Daily prompts at configurable times.
+- **AI Summaries**: Gemini extracts tasks, blockers, and progress from raw messages.
+- **Living Project Context**: The AI appends summaries to a project context that evolves over time.
+- **Kanban Board**: Track tasks across statuses.
+- **Ask AI**: Natural language queries against project context and recent updates.
+- **Smart Follow-ups**: The bot nudges developers about forgotten tasks.

@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider   = "prisma-client"
   output     = "../src/generated/prisma"
@@ -23,6 +18,15 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  role          String    @default("BUSINESS")
+
+  projects      Project[] @relation("ProjectOwner")
+  memberships   ProjectMember[]
+  updates       DevUpdate[]
+  tasks         Task[]    @relation("AssignedTasks")
+  aiQueries     AIQuery[]
+  contextLogs   ProjectContextLog[]
 
   @@unique([email])
   @@map("user")
@@ -89,4 +93,162 @@ model AuthOtpRequest {
 
   @@index([identifier, purpose, createdAt])
   @@map("auth_otp_request")
+}
+
+enum ProjectRole {
+  OWNER
+  MEMBER
+}
+
+model Project {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  contextPlainText  String?   @map("context_plain_text")
+  ownerId           String    @map("owner_id")
+  owner             User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, name: "ProjectOwner")
+  slackChannelId    String    @map("slack_channel_id")
+  slackChannelName  String    @map("slack_channel_name")
+  syncTime          String    @map("sync_time")
+  syncTimezone      String    @default("America/New_York") @map("sync_timezone")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  members           ProjectMember[]
+  syncSessions      SyncSession[]
+  tasks             Task[]
+  aiQueries         AIQuery[]
+  contextLogs       ProjectContextLog[]
+
+  @@map("project")
+}
+
+model ProjectMember {
+  id          String      @id @default(cuid())
+  projectId   String      @map("project_id")
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String?     @map("user_id")
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  slackUserId String      @map("slack_user_id")
+  role        String      @default("MEMBER")
+
+  @@unique([projectId, slackUserId])
+  @@map("project_member")
+}
+
+enum SyncSessionStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+}
+
+model SyncSession {
+  id              String            @id @default(cuid())
+  projectId       String            @map("project_id")
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime          @map("scheduled_at")
+  slackMessageTs  String?           @map("slack_message_ts")
+  status          SyncSessionStatus @default(PENDING)
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  updates         DevUpdate[]
+  followUps       FollowUp[]
+
+  @@map("sync_session")
+}
+
+model DevUpdate {
+  id              String      @id @default(cuid())
+  sessionId       String      @map("session_id")
+  session         SyncSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId          String?     @map("user_id")
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  slackUserId     String      @map("slack_user_id")
+  slackMessageTs  String      @map("slack_message_ts")
+  rawText         String      @map("raw_text")
+  aiSummary       String?     @map("ai_summary")
+  tasks           Json?
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  tasksCreated    Task[]      @relation("CreatedFromUpdate")
+
+  @@map("dev_update")
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  CLOSED
+}
+
+model Task {
+  id                  String      @id @default(cuid())
+  projectId           String      @map("project_id")
+  project             Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description         String
+  status              TaskStatus  @default(OPEN)
+  assignedToUserId    String?     @map("assigned_to_user_id")
+  assignedTo          User?       @relation(fields: [assignedToUserId], references: [id], onDelete: SetNull, name: "AssignedTasks")
+  lastMentionedAt     DateTime?   @map("last_mentioned_at")
+  createdFromUpdateId String?     @map("created_from_update_id")
+  createdFromUpdate   DevUpdate?  @relation(fields: [createdFromUpdateId], references: [id], onDelete: SetNull, name: "CreatedFromUpdate")
+  createdAt           DateTime    @default(now()) @map("created_at")
+
+  followUps           FollowUp[]
+
+  @@map("task")
+}
+
+model FollowUp {
+  id              String      @id @default(cuid())
+  taskId          String      @map("task_id")
+  task            Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  sessionId       String      @map("session_id")
+  session         SyncSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sentAt          DateTime    @default(now()) @map("sent_at")
+  slackMessageTs  String?     @map("slack_message_ts")
+  respondedAt     DateTime?   @map("responded_at")
+  responseText    String?     @map("response_text")
+
+  @@map("follow_up")
+}
+
+model AIQuery {
+  id          String    @id @default(cuid())
+  projectId   String    @map("project_id")
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question    String
+  answer      String
+  contextUsed Json?     @map("context_used")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("ai_query")
+}
+
+model ProjectContextLog {
+  id          String    @id @default(cuid())
+  projectId   String    @map("project_id")
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  updateType  String    @map("update_type")
+  oldContext  String?   @map("old_context")
+  newContext  String    @map("new_context")
+  updatedBy   String    @map("updated_by")
+  updater     User      @relation(fields: [updatedBy], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("project_context_log")
+}
+
+model RateLimit {
+  id          String    @id @default(cuid())
+  key         String
+  count       Int       @default(0)
+  windowStart DateTime  @default(now()) @map("window_start")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([key])
+  @@map("rate_limit")
 }

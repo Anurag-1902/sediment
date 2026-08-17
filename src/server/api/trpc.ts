@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import superjson from "superjson";
 
 import { getAuthClient, getPrisma } from "@/lib/krutai-server";
 import { getCookie, SESSION_COOKIE } from "./cookies";
@@ -35,7 +36,9 @@ export async function createTRPCContext({
 
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
-const t = initTRPC.context<TRPCContext>().create();
+const t = initTRPC.context<TRPCContext>().create({
+  transformer: superjson,
+});
 
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;

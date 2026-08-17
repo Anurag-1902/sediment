@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.projects.krut.ai"],
   output: "standalone",
   transpilePackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   turbopack: {
