@@ -487,8 +487,12 @@ function ProjectSettings({ project }: { project: any }) {
     "Europe/Paris",
     "Europe/Berlin",
     "Asia/Tokyo",
+    "Asia/Kolkata",
+    "Asia/Dubai",
     "Asia/Singapore",
+    "Asia/Shanghai",
     "Australia/Sydney",
+    "Pacific/Auckland",
   ];
 
   function generateTimeOptions() {
