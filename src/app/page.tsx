@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +20,9 @@ import {
   MessageCircle,
   Database,
   Hash,
+  ExternalLink,
+  Key,
+  Zap,
 } from "lucide-react";
 
 const features = [
@@ -73,6 +78,21 @@ function FeatureCard({ icon: Icon, title, description }: (typeof features)[0]) {
 
 export default function Home() {
   const { session } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      const pending = sessionStorage.getItem("pendingRedirect");
+      if (pending) {
+        sessionStorage.removeItem("pendingRedirect");
+        router.push(pending);
+      }
+    }
+  }, [session, router]);
+
+  const connectHref = session
+    ? "/dashboard/settings/slack"
+    : "/sign-up?redirect=/dashboard/settings/slack";
 
   return (
     <div className="min-h-screen bg-charcoal">
@@ -106,13 +126,13 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
-              <Link href="/sign-up">
+              <Link href={connectHref}>
                 <Button
                   size="lg"
                   className="bg-amber font-semibold text-charcoal hover:bg-amber-light"
                 >
                   <Slack className="mr-2 h-4 w-4" />
-                  Add to Slack
+                  Connect Slack
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -367,6 +387,68 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ==================== CONNECT IN 3 STEPS ==================== */}
+      <section className="relative mx-auto max-w-7xl px-6 py-24">
+        <div className="mb-16 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+            Connect in minutes
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
+            Bring your own Slack app — full control, zero vendor lock-in.
+          </p>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <ExternalLink className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Create a Slack App
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Head to api.slack.com/apps, create a new app from our ready-made
+              manifest. Takes 30 seconds.
+            </p>
+            <a
+              href="https://api.slack.com/apps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-1 text-sm text-amber hover:underline"
+            >
+              Open Slack API
+              <ArrowRight className="h-3 w-3" />
+            </a>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <Key className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Grab Your Credentials
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Copy your Client ID, Client Secret, Signing Secret, and Bot Token
+              from the Slack dashboard. We encrypt everything.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <Zap className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Start Running Standups
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Paste your credentials, pick a channel, set a sync time. Your
+              first standup posts automatically.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== CTA ==================== */}
       <section className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -387,23 +469,26 @@ export default function Home() {
             standups and surface insights faster.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/sign-up">
+            <Link href={connectHref}>
               <Button
                 size="lg"
                 className="bg-amber font-semibold text-charcoal hover:bg-amber-light"
               >
                 <Slack className="mr-2 h-4 w-4" />
-                Add to Slack — It&apos;s Free
+                Get Started — It&apos;s Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="text-text-muted hover:text-text"
-            >
-              Schedule a Demo
-            </Button>
+            <Link href="/dashboard/settings/slack">
+              <Button
+                variant="ghost"
+                size="lg"
+                className="text-text-muted hover:text-text"
+              >
+                View Setup Guide
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
           <p className="mt-4 text-sm text-text-muted">
             No credit card required · 5-minute setup · Cancel anytime

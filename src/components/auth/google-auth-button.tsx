@@ -1,9 +1,5 @@
 import { cn } from "@/lib/utils";
 
-type GoogleAuthButtonProps = {
-  className?: string;
-};
-
 function GoogleMark() {
   return (
     <svg
@@ -32,10 +28,39 @@ function GoogleMark() {
   );
 }
 
-export function GoogleAuthButton({ className }: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ className }: { className?: string }) {
   return (
     <a
       href="/api/auth/google/start"
+      className={cn(
+        "grid h-11 w-full grid-cols-[1.25rem_1fr_1.25rem] items-center gap-3 rounded-lg border border-border-custom bg-surface-raised px-4 text-sm font-semibold text-text shadow-xs transition-colors hover:border-amber/30 hover:bg-surface-overlay focus-visible:border-amber focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber/20",
+        className
+      )}
+    >
+      <GoogleMark />
+      <span className="justify-self-center">Continue with Google</span>
+      <span aria-hidden="true" />
+    </a>
+  );
+}
+
+export function GoogleAuthButtonWithRedirect({
+  redirect,
+  className,
+}: {
+  redirect?: string;
+  className?: string;
+}) {
+  const handleClick = () => {
+    if (redirect) {
+      sessionStorage.setItem("pendingRedirect", redirect);
+    }
+  };
+
+  return (
+    <a
+      href="/api/auth/google/start"
+      onClick={handleClick}
       className={cn(
         "grid h-11 w-full grid-cols-[1.25rem_1fr_1.25rem] items-center gap-3 rounded-lg border border-border-custom bg-surface-raised px-4 text-sm font-semibold text-text shadow-xs transition-colors hover:border-amber/30 hover:bg-surface-overlay focus-visible:border-amber focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber/20",
         className

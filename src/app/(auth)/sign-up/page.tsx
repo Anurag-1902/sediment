@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { MailCheck, UserPlus } from "lucide-react";
 
 import { AuthCard } from "@/components/auth/auth-card";
-import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { GoogleAuthButtonWithRedirect } from "@/components/auth/google-auth-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -24,6 +25,8 @@ export default function SignUpPage() {
     resendVerificationOtp,
     isResendingVerificationOtp,
   } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") ?? undefined;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [verificationEmail, setVerificationEmail] = useState("");
@@ -75,6 +78,10 @@ export default function SignUpPage() {
     }
   };
 
+  const signInHref = redirectParam
+    ? `/sign-in?redirect=${encodeURIComponent(redirectParam)}`
+    : "/sign-in";
+
   return (
     <AuthCard
       title={isAwaitingVerification ? "Check your inbox" : "Create account"}
@@ -102,7 +109,7 @@ export default function SignUpPage() {
           <div className="text-center text-sm text-text-muted">
             Already have an account?{" "}
             <Link
-              href="/sign-in"
+              href={signInHref}
               className="font-medium text-text underline underline-offset-4 hover:text-amber"
             >
               Sign in
@@ -169,7 +176,7 @@ export default function SignUpPage() {
       ) : (
         <>
           <div className="space-y-5">
-            <GoogleAuthButton />
+            <GoogleAuthButtonWithRedirect redirect={redirectParam} />
             <div className="flex items-center gap-3">
               <Separator className="flex-1 bg-border-custom" />
               <span className="text-xs font-medium uppercase text-text-muted">

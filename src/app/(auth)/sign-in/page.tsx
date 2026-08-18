@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { toast } from "sonner";
 
 import { AuthCard } from "@/components/auth/auth-card";
-import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import { GoogleAuthButtonWithRedirect } from "@/components/auth/google-auth-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,8 @@ import { Separator } from "@/components/ui/separator";
 
 export default function SignInPage() {
   const { signIn, isSigningIn } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") ?? undefined;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -35,6 +38,10 @@ export default function SignInPage() {
     signIn({ email, password });
   };
 
+  const signUpHref = redirectParam
+    ? `/sign-up?redirect=${encodeURIComponent(redirectParam)}`
+    : "/sign-up";
+
   return (
     <AuthCard
       title="Welcome back"
@@ -44,7 +51,7 @@ export default function SignInPage() {
         <div className="text-center text-sm text-text-muted">
           Don&apos;t have an account?{" "}
           <Link
-            href="/sign-up"
+            href={signUpHref}
             className="font-medium text-text underline underline-offset-4 hover:text-amber"
           >
             Create account
@@ -53,7 +60,7 @@ export default function SignInPage() {
       }
     >
       <div className="space-y-5">
-        <GoogleAuthButton />
+        <GoogleAuthButtonWithRedirect redirect={redirectParam} />
         <div className="flex items-center gap-3">
           <Separator className="flex-1 bg-border-custom" />
           <span className="text-xs font-medium uppercase text-text-muted">

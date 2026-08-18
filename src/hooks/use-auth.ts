@@ -25,11 +25,13 @@ export function useAuth() {
   );
   const session = data as AuthSession | null | undefined;
 
-  const signInMutation = trpc.auth.signIn.useMutation({
+const signInMutation = trpc.auth.signIn.useMutation({
     onSuccess: () => {
       toast.success("Signed in successfully");
       utils.auth.session.invalidate();
-      router.push("/");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      router.push(redirect ?? "/");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -53,7 +55,9 @@ export function useAuth() {
     onSuccess: () => {
       toast.success("Email verified successfully");
       utils.auth.session.invalidate();
-      router.push("/");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      router.push(redirect ?? "/");
     },
     onError: (error) => {
       toast.error(error.message);
