@@ -4,9 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Layers, LayoutDashboard, Settings, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
 
 export function DashboardSidebar({ userName }: { userName?: string | null }) {
   const pathname = usePathname();
+  const { data: workspace } = trpc.slackWorkspace.get.useQuery();
+  const needsSlackSetup = !workspace;
 
   const navItems = [
     {
@@ -18,6 +21,7 @@ export function DashboardSidebar({ userName }: { userName?: string | null }) {
       href: "/dashboard/settings/slack",
       icon: MessageSquare,
       title: "Slack Integration",
+      badge: needsSlackSetup,
     },
   ];
 
@@ -36,7 +40,7 @@ export function DashboardSidebar({ userName }: { userName?: string | null }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+                "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                 isActive
                   ? "bg-amber/10 text-amber"
                   : "text-text-muted hover:bg-surface-raised hover:text-text"
@@ -44,6 +48,9 @@ export function DashboardSidebar({ userName }: { userName?: string | null }) {
               title={item.title}
             >
               <item.icon className="h-4 w-4" />
+              {item.badge && (
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber" />
+              )}
             </Link>
           );
         })}

@@ -159,6 +159,19 @@ export function SlackSettingsPage({
         </div>
 
         <div className="max-w-3xl mx-auto p-6 space-y-6">
+          {/* Prominent Status Banner */}
+          {isConnected ? (
+            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-400">
+              Your Slack workspace <strong>{workspace?.workspaceName}</strong>{" "}
+              is connected. You can now create projects and run standups.
+            </div>
+          ) : (
+            <div className="rounded-lg bg-amber/10 border border-amber/20 px-4 py-3 text-sm text-amber">
+              Connect your Slack workspace to start using Sediment. Follow the
+              steps below.
+            </div>
+          )}
+
           {/* Status Card */}
           <Card className="rounded-xl border-border-custom bg-surface">
             <CardContent className="p-6">
@@ -223,9 +236,19 @@ export function SlackSettingsPage({
               </div>
 
               {testMutation.isSuccess && testMutation.data && (
-                <div className="mt-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-400">
-                  Connected to {testMutation.data.teamName} (bot{" "}
-                  {testMutation.data.botUserId})
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-400">
+                    Connected to {testMutation.data.teamName} (bot{" "}
+                    {testMutation.data.botUserId})
+                  </div>
+                  <Link href="/dashboard">
+                    <Button
+                      size="sm"
+                      className="bg-amber hover:bg-amber-light text-charcoal"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </Link>
                 </div>
               )}
 
