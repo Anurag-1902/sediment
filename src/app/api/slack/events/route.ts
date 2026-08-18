@@ -1,37 +1,54 @@
 import { getPrisma } from "@/lib/krutai-server";
-import { getSlackClient, verifySlackRequest } from "@/server/slack";
+import {
+  getSlackClient,
+  getSlackConfigByWorkspaceId,
+  verifySlackRequest,
+} from "@/server/slack";
 import { extractTasks, summarizeUpdate, updateProjectContext } from "@/server/ai";
 
 export const dynamic = "force-dynamic";
 
-let cachedBotUserId: string | null = null;
+const botUserIdCache = new Map<string, string | null>();
 
-async function getBotUserId() {
-  if (cachedBotUserId) return cachedBotUserId;
+async function getBotUserId(workspaceId?: string) {
+  const cacheKey = workspaceId ?? "__default__";
+  if (botUserIdCache.has(cacheKey)) return botUserIdCache.get(cacheKey);
+
   const client = getSlackClient();
   const result = await client.auth.test();
-  cachedBotUserId = result.user_id ?? null;
-  return cachedBotUserId;
-}
-
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing env: ${name}`);
-  return value;
+  const botUserId = result.user_id ?? null;
+  botUserIdCache.set(cacheKey, botUserId);
+  return botUserId;
 }
 
 export async function POST(request: Request) {
-  const signingSecret = requireEnv("SLACK_SIGNING_SECRET");
   const signature = request.headers.get("x-slack-signature") ?? "";
   const timestamp = request.headers.get("x-slack-request-timestamp") ?? "";
 
   const rawBody = await request.text();
+  const body = JSON.parse(rawBody);
+
+  let signingSecret: string | undefined;
+
+  const teamId = body.team_id ?? body?.event?.team;
+  if (teamId) {
+    const config = await getSlackConfigByWorkspaceId(teamId);
+    if (config) {
+      signingSecret = config.signingSecret;
+    }
+  }
+
+  if (!signingSecret) {
+    signingSecret = process.env.SLACK_SIGNING_SECRET;
+  }
+
+  if (!signingSecret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
   if (!verifySlackRequest(signingSecret, timestamp, rawBody, signature)) {
     return new Response("Unauthorized", { status: 401 });
   }
-
-  const body = JSON.parse(rawBody);
 
   if (body.type === "url_verification") {
     return Response.json({ challenge: body.challenge });
@@ -44,7 +61,7 @@ export async function POST(request: Request) {
       if (event.bot_id || event.subtype) {
         return Response.json({ ok: true });
       }
-      const botUserId = await getBotUserId();
+      const botUserId = await getBotUserId(teamId);
       if (event.user === botUserId) {
         return Response.json({ ok: true });
       }
@@ -149,7 +166,9 @@ async function handleThreadReply(event: {
   if (allUpdates.length > 0 && session.project.contextPlainText) {
     const newContext = await updateProjectContext(
       session.project.contextPlainText,
-      allUpdates.map((u: { aiSummary: string | null }) => u.aiSummary ?? "").filter((s: string): s is string => Boolean(s))
+      allUpdates
+        .map((u: { aiSummary: string | null }) => u.aiSummary ?? "")
+        .filter((s: string): s is string => Boolean(s))
     );
 
     await prisma.project.update({

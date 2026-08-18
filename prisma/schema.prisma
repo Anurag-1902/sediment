@@ -27,6 +27,7 @@ model User {
   tasks         Task[]    @relation("AssignedTasks")
   aiQueries     AIQuery[]
   contextLogs   ProjectContextLog[]
+  slackWorkspace SlackWorkspace?
 
   @@unique([email])
   @@map("user")
@@ -244,12 +245,29 @@ model ProjectContextLog {
 }
 
 model RateLimit {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   key         String
-  count       Int       @default(0)
-  windowStart DateTime  @default(now()) @map("window_start")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  count       Int      @default(0)
+  windowStart DateTime @default(now()) @map("window_start")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([key])
   @@map("rate_limit")
+}
+
+model SlackWorkspace {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceName    String   @map("workspace_name")
+  workspaceId      String?  @map("workspace_id")
+  clientIdEnc      String   @map("client_id_enc")
+  clientSecretEnc  String   @map("client_secret_enc")
+  signingSecretEnc String   @map("signing_secret_enc")
+  botTokenEnc      String   @map("bot_token_enc")
+  botUserId        String?  @map("bot_user_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("slack_workspaces")
 }

@@ -20,8 +20,6 @@ import {
   EmptyContent,
 } from "@/components/ui/empty";
 import {
-  Layers,
-  LayoutDashboard,
   Plus,
   FolderOpen,
   ListTodo,
@@ -30,6 +28,7 @@ import {
   Activity,
   ArrowRight,
 } from "lucide-react";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
 
 export default function DashboardPage() {
   const { session } = useAuth();
@@ -46,28 +45,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-charcoal">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex w-16 flex-col items-center border-r border-border-custom bg-slate py-4">
-        <Link href="/dashboard" className="mb-8">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber to-amber-dark">
-            <Layers className="h-4 w-4 text-charcoal" />
-          </div>
-        </Link>
-        <nav className="flex flex-1 flex-col items-center gap-2">
-          <Link
-            href="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10 text-amber"
-            title="Dashboard"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-          </Link>
-        </nav>
-        <div className="mt-auto">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-text-muted text-xs font-medium">
-            {user?.name?.split(" ").map((n) => n[0]).join("") ?? "U"}
-          </div>
-        </div>
-      </aside>
+      <DashboardSidebar userName={user?.name} />
 
       {/* Main content */}
       <main className="flex-1 overflow-auto">

@@ -1,5 +1,7 @@
 import type { ConversationsRepliesResponse } from "@slack/web-api";
 import { WebClient } from "@slack/web-api";
+import { getPrisma } from "@/lib/krutai-server";
+import { decrypt } from "@/lib/crypto";
 
 function requireEnv(name: string) {
   const value = process.env[name];
@@ -9,14 +11,102 @@ function requireEnv(name: string) {
   return value;
 }
 
-let slackClient: WebClient | null = null;
+export interface SlackConfig {
+  clientId: string;
+  clientSecret: string;
+  signingSecret: string;
+  botToken: string;
+}
 
-export function getSlackClient() {
-  if (!slackClient) {
-    const token = requireEnv("SLACK_BOT_TOKEN");
-    slackClient = new WebClient(token);
+export async function getSlackConfigForUser(
+  userId: string
+): Promise<SlackConfig | null> {
+  const prisma = await getPrisma();
+  const workspace = await prisma.slackWorkspace.findUnique({
+    where: { userId },
+  });
+
+  if (workspace) {
+    return {
+      clientId: decrypt(workspace.clientIdEnc),
+      clientSecret: decrypt(workspace.clientSecretEnc),
+      signingSecret: decrypt(workspace.signingSecretEnc),
+      botToken: decrypt(workspace.botTokenEnc),
+    };
   }
-  return slackClient;
+
+  const clientId = process.env.SLACK_CLIENT_ID;
+  const clientSecret = process.env.SLACK_CLIENT_SECRET;
+  const signingSecret = process.env.SLACK_SIGNING_SECRET;
+  const botToken = process.env.SLACK_BOT_TOKEN;
+
+  if (!clientId || !clientSecret || !signingSecret || !botToken) {
+    return null;
+  }
+
+  return { clientId, clientSecret, signingSecret, botToken };
+}
+
+export async function getSlackConfigByWorkspaceId(
+  workspaceId: string
+): Promise<SlackConfig | null> {
+  const prisma = await getPrisma();
+  const workspace = await prisma.slackWorkspace.findFirst({
+    where: { workspaceId },
+  });
+
+  if (!workspace) {
+    const envWorkspaceId = process.env.SLACK_WORKSPACE_ID;
+    if (envWorkspaceId && envWorkspaceId !== workspaceId) {
+      return null;
+    }
+
+    const clientId = process.env.SLACK_CLIENT_ID;
+    const clientSecret = process.env.SLACK_CLIENT_SECRET;
+    const signingSecret = process.env.SLACK_SIGNING_SECRET;
+    const botToken = process.env.SLACK_BOT_TOKEN;
+
+    if (!clientId || !clientSecret || !signingSecret || !botToken) {
+      return null;
+    }
+
+    return { clientId, clientSecret, signingSecret, botToken };
+  }
+
+  return {
+    clientId: decrypt(workspace.clientIdEnc),
+    clientSecret: decrypt(workspace.clientSecretEnc),
+    signingSecret: decrypt(workspace.signingSecretEnc),
+    botToken: decrypt(workspace.botTokenEnc),
+  };
+}
+
+const clientCache = new Map<string, WebClient>();
+
+export function getSlackClient(userId?: string) {
+  const cacheKey = userId ?? "__default__";
+
+  let client = clientCache.get(cacheKey);
+  if (client) return client;
+
+  const token = requireEnv("SLACK_BOT_TOKEN");
+  client = new WebClient(token);
+  clientCache.set(cacheKey, client);
+  return client;
+}
+
+export async function getSlackClientForUser(userId: string) {
+  const config = await getSlackConfigForUser(userId);
+  if (!config) {
+    throw new Error("Slack credentials not configured for user");
+  }
+
+  let client = clientCache.get(userId);
+  if (client) return client;
+
+  client = new WebClient(config.botToken);
+  clientCache.set(userId, client);
+  return client;
 }
 
 export function verifySlackRequest(
@@ -49,9 +139,12 @@ export function verifySlackRequest(
 
 export async function postSyncMessage(
   channel: string,
-  projectName: string
+  projectName: string,
+  userId?: string
 ) {
-  const client = getSlackClient();
+  const client = userId
+    ? await getSlackClientForUser(userId)
+    : getSlackClient();
   const text = `Daily Sync for *${projectName}* — Please reply in thread with your update.\n\nWhat did you do yesterday? What's on today? Any blockers?`;
   const result = await client.chat.postMessage({
     channel,
@@ -65,9 +158,12 @@ export async function postFollowUpMessage(
   channel: string,
   threadTs: string,
   slackUserId: string,
-  taskDescription: string
+  taskDescription: string,
+  userId?: string
 ) {
-  const client = getSlackClient();
+  const client = userId
+    ? await getSlackClientForUser(userId)
+    : getSlackClient();
   const text = `<@${slackUserId}> — any status on *${taskDescription}*?`;
   return client.chat.postMessage({
     channel,
@@ -77,8 +173,10 @@ export async function postFollowUpMessage(
   });
 }
 
-export async function getChannelList() {
-  const client = getSlackClient();
+export async function getChannelList(userId?: string) {
+  const client = userId
+    ? await getSlackClientForUser(userId)
+    : getSlackClient();
   const result = await client.conversations.list({
     types: "public_channel,private_channel",
     limit: 200,
@@ -91,10 +189,15 @@ export async function getChannelList() {
   }>;
 }
 
-const userCache = new Map<string, { id: string; name: string; realName?: string }>();
+const userCache = new Map<
+  string,
+  { id: string; name: string; realName?: string }
+>();
 
-export async function resolveSlackUser(handle: string) {
-  const client = getSlackClient();
+export async function resolveSlackUser(handle: string, userId?: string) {
+  const client = userId
+    ? await getSlackClientForUser(userId)
+    : getSlackClient();
   const cleanHandle = handle.replace(/^@/, "").toLowerCase();
 
   const cached = userCache.get(cleanHandle);
@@ -126,8 +229,14 @@ export async function resolveSlackUser(handle: string) {
   return userCache.get(cleanHandle);
 }
 
-export async function getThreadReplies(channel: string, threadTs: string) {
-  const client = getSlackClient();
+export async function getThreadReplies(
+  channel: string,
+  threadTs: string,
+  userId?: string
+) {
+  const client = userId
+    ? await getSlackClientForUser(userId)
+    : getSlackClient();
   const result = (await client.conversations.replies({
     channel,
     ts: threadTs,
