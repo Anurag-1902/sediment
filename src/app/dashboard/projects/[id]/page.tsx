@@ -450,6 +450,10 @@ function ProjectSettings({ project }: { project: any }) {
   const [channelId, setChannelId] = useState(project.slackChannelId ?? "");
   const [channelName, setChannelName] = useState(project.slackChannelName ?? "");
   const [customChannel, setCustomChannel] = useState(false);
+  const [memberHandles, setMemberHandles] = useState<string[]>(
+    project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
+  );
+  const [newMemberInput, setNewMemberInput] = useState("");
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
 
@@ -486,7 +490,23 @@ function ProjectSettings({ project }: { project: any }) {
       syncTime,
       syncTimezone: timezone,
       isActive,
+      memberHandles,
     });
+  };
+
+  const handleAddMember = () => {
+    const trimmed = newMemberInput.trim();
+    if (!trimmed) return;
+    if (memberHandles.includes(trimmed)) {
+      toast.error("Member already added");
+      return;
+    }
+    setMemberHandles((prev) => [...prev, trimmed]);
+    setNewMemberInput("");
+  };
+
+  const handleRemoveMember = (handle: string) => {
+    setMemberHandles((prev) => prev.filter((h) => h !== handle));
   };
 
   const TIMEZONES = [
@@ -655,6 +675,51 @@ function ProjectSettings({ project }: { project: any }) {
                   Active (enable daily syncs)
                 </Label>
               </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Team Members</h3>
+                <p className="text-xs text-text-muted">
+                  Only members listed here can post standup updates. Add Slack user IDs (starts with U) or usernames.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={newMemberInput}
+                    onChange={(e) => setNewMemberInput(e.target.value)}
+                    placeholder="Add Slack user ID (e.g. U08ABCDEFG) or handle"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddMember();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddMember}
+                  >
+                    + Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {memberHandles.map((handle) => (
+                    <span
+                      key={handle}
+                      className="inline-flex items-center gap-1 bg-amber/10 text-amber-light border border-amber/20 px-3 py-1 rounded-full text-sm"
+                    >
+                      {handle}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(handle)}
+                        className="ml-1 text-amber-light hover:text-amber"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 className="bg-amber hover:bg-amber-light text-charcoal"
