@@ -736,7 +736,7 @@ function ProjectSettings({ project }: { project: any }) {
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
-                        <div className="overflow-y-auto flex-1 max-h-[240px]">
+                        <div className="max-h-64 overflow-y-auto scroll-smooth divide-y divide-border">
                           {!workspaceUsers ? (
                             Array.from({ length: 5 }).map((_, i) => (
                               <div key={i} className="flex items-center gap-3 px-3 py-2">
