@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Copy,
+  ExternalLink,
   Eye,
   EyeOff,
   Loader2,
@@ -282,27 +283,51 @@ export function SlackSettingsPage({
               </CardHeader>
               <CollapsibleContent>
                 <CardContent className="space-y-6">
-                  <Step number={1} title="Create a Slack App">
+                  <Step number={1} title="Sign in to your Slack workspace">
                     <p className="text-sm text-text-muted">
-                      Go to{" "}
-                      <a
-                        href="https://api.slack.com/apps"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-amber hover:underline"
-                      >
-                        api.slack.com/apps
-                      </a>{" "}
-                      and click "Create New App" &rarr; "From a manifest".
-                      Select your workspace.
+                      Open your Slack workspace in a browser. Make sure you're signed in as a workspace admin or owner — you'll need admin permissions to install apps.
                     </p>
-                    <Placeholder>Screenshot: Create app button</Placeholder>
+                    <a
+                      href="https://slack.com/signin"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-amber hover:underline font-medium text-sm"
+                    >
+                      Open Slack
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <p className="text-xs text-text-muted italic mt-1">
+                      Not sure which workspace? Check with your team lead.
+                    </p>
                   </Step>
 
-                  <Step number={2} title="Paste this manifest">
+                  <Step number={2} title="Open the Slack API Dashboard">
+                    <p className="text-sm text-text-muted">
+                      This is where you create and manage Slack apps. Click the link below to open it. You'll be asked to sign in with the same Slack account.
+                    </p>
+                    <a
+                      href="https://api.slack.com/apps"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-amber hover:underline font-medium text-sm"
+                    >
+                      Open Slack API Dashboard &rarr;
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Step>
+
+                  <Step number={3} title="Create a new Slack App">
+                    <p className="text-sm text-text-muted">
+                      On the Slack API page, click the green 'Create New App' button. Select 'From a manifest' when asked. Then choose YOUR workspace from the dropdown list.
+                    </p>
+                    <p className="text-xs text-text-muted italic mt-1">
+                      If you see multiple workspaces, pick the one where your team communicates.
+                    </p>
+                  </Step>
+
+                  <Step number={4} title="Paste the Sediment manifest">
                     <p className="text-sm text-text-muted mb-2">
-                      Copy the manifest below and paste it into Slack. It
-                      includes the correct request URLs for this deployment.
+                      Copy the manifest below and paste it into the JSON editor on Slack's page. This tells Slack what permissions Sediment needs. Then click 'Next' and 'Create'.
                     </p>
                     <div className="relative">
                       <pre className="rounded-lg bg-charcoal border border-border p-3 text-xs text-text-muted overflow-auto max-h-72">
@@ -321,54 +346,96 @@ export function SlackSettingsPage({
                         Copy
                       </Button>
                     </div>
-                    <Placeholder>Screenshot: Manifest pasted</Placeholder>
                   </Step>
 
-                  <Step number={3} title="Install the app to your workspace">
+                  <Step number={5} title="Install the app to your workspace">
                     <p className="text-sm text-text-muted">
-                      Click "Install to Workspace" and authorize. This grants
-                      the bot access.
+                      After creating the app, Slack will show a review page. Click 'Install to Workspace' (or 'Create and Install'). Slack will ask you to authorize — click 'Allow'. This installs the Sediment bot into your workspace.
                     </p>
-                    <Placeholder>Screenshot: Install button</Placeholder>
                   </Step>
 
-                  <Step number={4} title="Copy your credentials">
-                    <div className="text-sm text-text-muted space-y-1">
-                      <p>
-                        Under <strong>Basic Information</strong>, copy:
-                      </p>
-                      <ul className="list-disc pl-5 space-y-0.5">
-                        <li>Client ID</li>
-                        <li>Client Secret (click Show)</li>
-                        <li>Signing Secret (click Show)</li>
-                      </ul>
-                      <p>
-                        Under <strong>OAuth & Permissions</strong>, copy:
-                      </p>
-                      <ul className="list-disc pl-5 space-y-0.5">
-                        <li>Bot User OAuth Token (starts with xoxb-)</li>
-                      </ul>
+                  <Step number={6} title="Find your credentials">
+                    <p className="text-sm text-text-muted">
+                      After installing, you'll land on your app's settings page. You need 4 values from two different pages:
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-charcoal border border-border rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-amber mb-2">
+                          From Basic Information page
+                        </h4>
+                        <a
+                          href="https://api.slack.com/apps"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-amber hover:underline font-medium text-sm"
+                        >
+                          Open Slack API Dashboard
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <p className="text-xs text-text-muted mb-3">
+                          Click your app name, then Basic Information in the left sidebar
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-sm text-text-muted shrink-0">Client ID</span>
+                            <span className="text-sm text-text">Shown near the top of the page</span>
+                          </div>
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-sm text-text-muted shrink-0">Client Secret</span>
+                            <div>
+                              <span className="text-sm text-text block">Click "Show" to reveal, then copy</span>
+                              <span className="text-xs text-text-muted">Click 'Show' then copy</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-sm text-text-muted shrink-0">Signing Secret</span>
+                            <div>
+                              <span className="text-sm text-text block">Scroll down to "App Credentials", click "Show", copy</span>
+                              <span className="text-xs text-text-muted">Click 'Show' then copy</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-charcoal border border-border rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-amber mb-2">
+                          From OAuth & Permissions page
+                        </h4>
+                        <p className="text-xs text-text-muted mb-3">
+                          Left sidebar &rarr; OAuth & Permissions
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-sm text-text-muted shrink-0">Bot User OAuth Token</span>
+                            <span className="text-sm text-text">Starts with xoxb-, copy the full token</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <Placeholder>
-                      Screenshot: Credentials location
-                    </Placeholder>
-                  </Step>
-
-                  <Step number={5} title="Paste them below">
-                    <p className="text-sm text-text-muted">
-                      Fill in the form and click Save. Then click Test
-                      Connection.
+                    <p className="text-xs text-text-muted italic mt-1">
+                      Keep this tab open — you'll paste these values in the form below.
                     </p>
                   </Step>
 
-                  <Step number={6} title="Invite the bot to your channel">
+                  <Step number={7} title="Paste credentials below">
                     <p className="text-sm text-text-muted">
-                      In Slack, go to the channel you want Sediment to post in
-                      and type:
+                      Scroll down to the 'Workspace Credentials' form on this page. Paste each value into the matching field, then click Save. After saving, click 'Test Connection' to verify everything works.
+                    </p>
+                    <p className="text-xs text-text-muted italic mt-1">
+                      Your credentials are encrypted before storage — we never store them in plain text.
+                    </p>
+                  </Step>
+
+                  <Step number={8} title="Invite the bot to your channel">
+                    <p className="text-sm text-text-muted">
+                      Finally, go to Slack and open the channel where you want daily standups to appear. Type the command below and press Enter. This adds the Sediment bot to that channel so it can post messages.
                     </p>
                     <code className="inline-block rounded bg-charcoal border border-border px-2 py-1 text-xs text-text">
                       /invite @Sediment
                     </code>
+                    <p className="text-xs text-text-muted italic mt-1">
+                      You can invite the bot to multiple channels and use different ones for different projects.
+                    </p>
                   </Step>
                 </CardContent>
               </CollapsibleContent>
@@ -491,14 +558,6 @@ function Step({
         <h3 className="text-sm font-semibold text-text">{title}</h3>
         {children}
       </div>
-    </div>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-dashed border-border-custom bg-charcoal/50 px-4 py-6 text-center text-xs text-text-muted">
-      {children}
     </div>
   );
 }
