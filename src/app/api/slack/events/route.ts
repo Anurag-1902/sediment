@@ -72,8 +72,12 @@ export async function POST(request: Request) {
       }
 
       if (event.thread_ts && event.user && event.text) {
-        await handleThreadReply(event);
+        // Fire and forget — don't await, so Slack gets fast 200
+        handleThreadReply(event).catch((err) =>
+          console.error("[events] async handleThreadReply failed:", err)
+        );
       }
+      return Response.json({ ok: true });
     }
 
     if (event.type === "app_mention") {
@@ -125,89 +129,107 @@ async function handleThreadReply(event: {
   }
   console.log("[events] Member validated", { memberId: member.id });
 
-  const aiSummary = await summarizeUpdate(event.text);
-  const extractedTasks = await extractTasks(event.text);
+  try {
+    let aiSummary: string | null = null;
+    let extractedTasks: Array<{ description: string; status: string }> = [];
 
-  const update = await prisma.devUpdate.create({
-    data: {
-      sessionId: session.id,
-      slackUserId: event.user,
-      slackMessageTs: event.ts,
-      rawText: event.text,
-      aiSummary,
-      tasks: extractedTasks as any,
-    },
-  });
-  console.log("[events] DevUpdate created", { updateId: update.id });
+    try {
+      aiSummary = await summarizeUpdate(event.text);
+    } catch (err) {
+      console.error("[events] summarizeUpdate failed:", err);
+      aiSummary = null;
+    }
 
-  for (const taskData of extractedTasks) {
-    const normalizedStatus =
-      taskData.status === "OPEN"
-        ? "OPEN"
-        : taskData.status === "IN_PROGRESS"
-          ? "IN_PROGRESS"
-          : taskData.status === "BLOCKED"
-            ? "BLOCKED"
-            : taskData.status === "CLOSED"
-              ? "CLOSED"
-              : "OPEN";
+    try {
+      extractedTasks = await extractTasks(event.text);
+    } catch (err) {
+      console.error("[events] extractTasks failed:", err);
+      extractedTasks = [];
+    }
 
-    const existingTask = await prisma.task.findFirst({
-      where: {
-        projectId: session.projectId,
-        description: taskData.description,
-        status: { not: "CLOSED" },
+    const update = await prisma.devUpdate.create({
+      data: {
+        sessionId: session.id,
+        slackUserId: event.user,
+        slackMessageTs: event.ts,
+        rawText: event.text,
+        aiSummary,
+        tasks: extractedTasks as any,
       },
     });
+    console.log("[events] DevUpdate created", { updateId: update.id });
 
-    if (existingTask) {
-      await prisma.task.update({
-        where: { id: existingTask.id },
-        data: {
-          status: normalizedStatus,
-          lastMentionedAt: new Date(),
-        },
-      });
-    } else {
-      await prisma.task.create({
-        data: {
+    for (const taskData of extractedTasks) {
+      const normalizedStatus =
+        taskData.status === "OPEN"
+          ? "OPEN"
+          : taskData.status === "IN_PROGRESS"
+            ? "IN_PROGRESS"
+            : taskData.status === "BLOCKED"
+              ? "BLOCKED"
+              : taskData.status === "CLOSED"
+                ? "CLOSED"
+                : "OPEN";
+
+      const existingTask = await prisma.task.findFirst({
+        where: {
           projectId: session.projectId,
           description: taskData.description,
-          status: normalizedStatus,
-          assignedToUserId: member.userId ?? null,
-          lastMentionedAt: new Date(),
-          createdFromUpdateId: update.id,
+          status: { not: "CLOSED" },
+        },
+      });
+
+      if (existingTask) {
+        await prisma.task.update({
+          where: { id: existingTask.id },
+          data: {
+            status: normalizedStatus,
+            lastMentionedAt: new Date(),
+          },
+        });
+      } else {
+        await prisma.task.create({
+          data: {
+            projectId: session.projectId,
+            description: taskData.description,
+            status: normalizedStatus,
+            assignedToUserId: member.userId ?? null,
+            lastMentionedAt: new Date(),
+            createdFromUpdateId: update.id,
+          },
+        });
+      }
+    }
+
+    const allUpdates = await prisma.devUpdate.findMany({
+      where: { sessionId: session.id },
+      select: { aiSummary: true },
+    });
+
+    if (allUpdates.length > 0 && session.project.contextPlainText) {
+      const newContext = await updateProjectContext(
+        session.project.contextPlainText,
+        allUpdates
+          .map((u: { aiSummary: string | null }) => u.aiSummary ?? "")
+          .filter((s: string): s is string => Boolean(s))
+      );
+
+      await prisma.project.update({
+        where: { id: session.projectId },
+        data: { contextPlainText: newContext },
+      });
+
+      await prisma.projectContextLog.create({
+        data: {
+          projectId: session.projectId,
+          updateType: "AUTO_SYNC",
+          oldContext: session.project.contextPlainText,
+          newContext,
+          updatedBy: session.project.ownerId,
         },
       });
     }
-  }
-
-  const allUpdates = await prisma.devUpdate.findMany({
-    where: { sessionId: session.id },
-    select: { aiSummary: true },
-  });
-
-  if (allUpdates.length > 0 && session.project.contextPlainText) {
-    const newContext = await updateProjectContext(
-      session.project.contextPlainText,
-      allUpdates
-        .map((u: { aiSummary: string | null }) => u.aiSummary ?? "")
-        .filter((s: string): s is string => Boolean(s))
-    );
-
-    await prisma.project.update({
-      where: { id: session.projectId },
-      data: { contextPlainText: newContext },
-    });
-
-    await prisma.projectContextLog.create({
-      data: {
-        projectId: session.projectId,
-        updateType: "AUTO_SYNC",
-        oldContext: session.project.contextPlainText,
-        newContext,
-        updatedBy: session.project.ownerId,
-      },
-    });
+  } catch (err) {
+    console.error("[events] handleThreadReply processing failed:", err);
   }
 }
