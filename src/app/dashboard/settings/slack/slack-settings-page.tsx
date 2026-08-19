@@ -94,8 +94,12 @@ export function SlackSettingsPage({
     onError: (err) => toast.error(err.message),
   });
   const testMutation = trpc.slackWorkspace.test.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      toast.success(`Connected to ${data.teamName || "Slack workspace"}`);
       utils.slackWorkspace.get.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Connection failed: ${err.message}`);
     },
   });
   const deleteMutation = trpc.slackWorkspace.delete.useMutation({

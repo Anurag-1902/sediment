@@ -91,23 +91,19 @@ export const slackWorkspaceRouter = createTRPCRouter({
         });
       }
 
-      const teamName = result.team ?? "";
-      const workspaceId = result.team_id ?? "";
-      const botUserId = result.user_id ?? "";
-
       await prisma.slackWorkspace.update({
         where: { userId },
         data: {
-          workspaceId,
-          botUserId,
+          workspaceId: result.team_id ?? undefined,
+          botUserId: result.user_id ?? undefined,
         },
       });
 
       return {
         ok: true,
-        workspaceId,
-        botUserId,
-        teamName,
+        teamName: result.team ?? "Unknown",
+        workspaceId: result.team_id ?? null,
+        botUserId: result.user_id ?? null,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
