@@ -95,17 +95,35 @@ async function handleThreadReply(event: {
 }) {
   const prisma = await getPrisma();
 
+  console.log("[events] handleThreadReply called", {
+    channel: event.channel,
+    thread_ts: event.thread_ts,
+    user: event.user,
+    textPreview: event.text.slice(0, 50)
+  });
+
   const session = await prisma.syncSession.findFirst({
     where: { slackMessageTs: event.thread_ts, status: "ACTIVE" },
     include: { project: true },
   });
 
-  if (!session) return;
+  if (!session) {
+    console.log("[events] No matching ACTIVE session for thread_ts", event.thread_ts);
+    return;
+  }
+  console.log("[events] Session found", { sessionId: session.id, projectId: session.projectId });
 
   const member = await prisma.projectMember.findFirst({
     where: { projectId: session.projectId, slackUserId: event.user },
   });
-  if (!member) return;
+  if (!member) {
+    console.log("[events] User is not a project member", {
+      slackUserId: event.user,
+      projectId: session.projectId
+    });
+    return;
+  }
+  console.log("[events] Member validated", { memberId: member.id });
 
   const aiSummary = await summarizeUpdate(event.text);
   const extractedTasks = await extractTasks(event.text);
@@ -120,6 +138,7 @@ async function handleThreadReply(event: {
       tasks: extractedTasks as any,
     },
   });
+  console.log("[events] DevUpdate created", { updateId: update.id });
 
   for (const taskData of extractedTasks) {
     const normalizedStatus =
