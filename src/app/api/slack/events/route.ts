@@ -21,11 +21,17 @@ async function getBotUserId(userId: string) {
 }
 
 export async function POST(request: Request) {
-  const signature = request.headers.get("x-slack-signature") ?? "";
-  const timestamp = request.headers.get("x-slack-request-timestamp") ?? "";
-
   const rawBody = await request.text();
   const body = JSON.parse(rawBody);
+
+  // Handle URL verification FIRST — no team_id or signature needed
+  if (body.type === "url_verification") {
+    return Response.json({ challenge: body.challenge });
+  }
+
+  // For all other requests, verify signature
+  const signature = request.headers.get("x-slack-signature") ?? "";
+  const timestamp = request.headers.get("x-slack-request-timestamp") ?? "";
 
   let signingSecret: string | undefined;
   let workspaceUserId: string | undefined;
@@ -49,10 +55,6 @@ export async function POST(request: Request) {
 
   if (!verifySlackRequest(signingSecret, timestamp, rawBody, signature)) {
     return new Response("Unauthorized", { status: 401 });
-  }
-
-  if (body.type === "url_verification") {
-    return Response.json({ challenge: body.challenge });
   }
 
   if (body.type === "event_callback") {
