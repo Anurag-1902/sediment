@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { toast } from "sonner";
 import {
@@ -454,11 +455,19 @@ function ProjectSettings({ project }: { project: any }) {
     project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
   );
   const [newMemberInput, setNewMemberInput] = useState("");
+  const [showAddById, setShowAddById] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
+  const { data: workspaceUsers, error: usersError } = trpc.slack.users.useQuery(
+    undefined,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const isSlackNotConnected =
-    channelsError?.data?.code === "PRECONDITION_FAILED";
+    channelsError?.data?.code === "PRECONDITION_FAILED" ||
+    usersError?.data?.code === "PRECONDITION_FAILED";
 
   const updateProject = trpc.project.update.useMutation({
     onSuccess: () => {
@@ -679,44 +688,172 @@ function ProjectSettings({ project }: { project: any }) {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Team Members</h3>
                 <p className="text-xs text-text-muted">
-                  Only members listed here can post standup updates. Add Slack user IDs (starts with U) or usernames.
+                  Only members listed here can post standup updates. Select workspace users from the dropdown below.
                 </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={newMemberInput}
-                    onChange={(e) => setNewMemberInput(e.target.value)}
-                    placeholder="Add Slack user ID (e.g. U08ABCDEFG) or handle"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddMember();
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddMember}
-                  >
-                    + Add
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {memberHandles.map((handle) => (
-                    <span
-                      key={handle}
-                      className="inline-flex items-center gap-1 bg-amber/10 text-amber-light border border-amber/20 px-3 py-1 rounded-full text-sm"
+
+                {isSlackNotConnected ? (
+                  <div className="rounded-xl border-2 border-amber p-4 text-center space-y-3">
+                    <div className="flex justify-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber/10">
+                        <MessageSquare className="h-5 w-5 text-amber" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-text">
+                        Connect your Slack workspace
+                      </h3>
+                      <p className="text-xs text-text-muted mt-1">
+                        To select team members, connect your Slack account first.
+                      </p>
+                    </div>
+                    <Link href="/dashboard/settings/slack">
+                      <Button size="sm" className="bg-amber hover:bg-amber-light text-charcoal font-medium">
+                        Connect Slack Account
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div
+                      className="bg-charcoal border border-border rounded-lg cursor-pointer"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
                     >
-                      {handle}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMember(handle)}
-                        className="ml-1 text-amber-light hover:text-amber"
+                      <div className="px-3 py-2 text-sm text-text-muted">
+                        {dropdownOpen ? "Close member list" : "Select workspace members..."}
+                      </div>
+                    </div>
+
+                    {dropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-charcoal border border-border rounded-lg shadow-lg max-h-[320px] flex flex-col">
+                        <div className="p-2 border-b border-border">
+                          <input
+                            type="text"
+                            value={memberSearch}
+                            onChange={(e) => setMemberSearch(e.target.value)}
+                            placeholder="Search members..."
+                            className="w-full bg-transparent border-0 border-b border-border focus:border-amber text-sm text-text placeholder:text-text-muted outline-none pb-1"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div className="overflow-y-auto flex-1 max-h-[240px]">
+                          {!workspaceUsers ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                              <div key={i} className="flex items-center gap-3 px-3 py-2">
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <div className="space-y-1 flex-1">
+                                  <Skeleton className="h-3 w-24" />
+                                  <Skeleton className="h-2 w-16" />
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            workspaceUsers
+                              .filter((u: any) => {
+                                const q = memberSearch.toLowerCase();
+                                return (
+                                  u.realName.toLowerCase().includes(q) ||
+                                  u.name.toLowerCase().includes(q) ||
+                                  (u.displayName && u.displayName.toLowerCase().includes(q))
+                                );
+                              })
+                              .map((user: any) => {
+                                const isSelected = memberHandles.includes(user.id);
+                                return (
+                                  <div
+                                    key={user.id}
+                                    className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-surface-raised ${isSelected ? "bg-amber/5" : ""}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isSelected) {
+                                        setMemberHandles((prev) => prev.filter((h) => h !== user.id));
+                                      } else {
+                                        setMemberHandles((prev) => [...prev, user.id]);
+                                      }
+                                    }}
+                                  >
+                                    {user.avatarUrl ? (
+                                      <img
+                                        src={user.avatarUrl}
+                                        alt=""
+                                        className="h-8 w-8 rounded-full"
+                                      />
+                                    ) : (
+                                      <div className="h-8 w-8 rounded-full bg-amber/20 flex items-center justify-center text-xs font-medium text-amber">
+                                        {user.realName.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-text truncate">
+                                        {user.realName}
+                                      </div>
+                                      <div className="text-xs text-text-muted truncate">
+                                        @{user.name}
+                                      </div>
+                                    </div>
+                                    <Checkbox checked={isSelected} />
+                                  </div>
+                                );
+                              })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {memberHandles.map((handle) => {
+                    const user = workspaceUsers?.find((u: any) => u.id === handle);
+                    const label = user?.realName ?? user?.name ?? handle;
+                    return (
+                      <span
+                        key={handle}
+                        className="inline-flex items-center gap-1 bg-amber/10 text-amber-light border border-amber/20 px-3 py-1 rounded-full text-sm"
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(handle)}
+                          className="ml-1 text-amber-light hover:text-amber"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddById(!showAddById)}
+                    className="text-xs text-text-muted hover:text-text underline"
+                  >
+                    {showAddById ? "Hide" : "Add by ID"}
+                  </button>
+                  {showAddById && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newMemberInput}
+                        onChange={(e) => setNewMemberInput(e.target.value)}
+                        placeholder="Add Slack user ID (e.g. U08ABCDEFG)"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddMember();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddMember}
+                      >
+                        + Add
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
