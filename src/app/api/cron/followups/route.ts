@@ -1,5 +1,5 @@
 import { getPrisma } from "@/lib/krutai-server";
-import { postFollowUpMessage } from "@/server/slack";
+import { postFollowUpMessage, getSlackConfigForUser } from "@/server/slack";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,20 @@ export async function GET() {
 
   for (const session of sessions) {
     try {
+      const config = await getSlackConfigForUser(session.project.ownerId);
+      if (!config) {
+        results.push({
+          sessionId: session.id,
+          status: "skipped",
+          error: "Owner has not connected Slack workspace",
+        });
+        await prisma.syncSession.update({
+          where: { id: session.id },
+          data: { status: "COMPLETED" },
+        });
+        continue;
+      }
+
       const mentionedTaskIds = new Set(
         (
           await prisma.devUpdate.findMany({
@@ -61,7 +75,8 @@ export async function GET() {
               session.project.slackChannelId,
               session.slackMessageTs,
               member.slackUserId,
-              task.description
+              task.description,
+              session.project.ownerId
             );
 
             await prisma.followUp.create({

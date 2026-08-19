@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getPrisma } from "@/lib/krutai-server";
+import { decrypt } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +18,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing code parameter" }, { status: 400 });
   }
 
-  const clientId = process.env.SLACK_CLIENT_ID;
-  const clientSecret = process.env.SLACK_CLIENT_SECRET;
-  const redirectUri = `${process.env.APP_URL}/api/slack/oauth/callback`;
-
-  if (!clientId || !clientSecret) {
-    return NextResponse.json({ error: "Slack credentials not configured" }, { status: 500 });
+  if (!state) {
+    return NextResponse.json(
+      { error: "Missing state. Connect your workspace via Dashboard > Slack Integration." },
+      { status: 400 }
+    );
   }
+
+  const prisma = await getPrisma();
+  const workspace = await prisma.slackWorkspace.findUnique({
+    where: { userId: state },
+  });
+
+  if (!workspace) {
+    return NextResponse.json(
+      { error: "No Slack workspace found for this user. Please save your credentials in the dashboard first." },
+      { status: 400 }
+    );
+  }
+
+  const clientId = decrypt(workspace.clientIdEnc);
+  const clientSecret = decrypt(workspace.clientSecretEnc);
+  const redirectUri = `${process.env.APP_URL}/api/slack/oauth/callback`;
 
   try {
     const response = await fetch("https://slack.com/api/oauth.v2.access", {

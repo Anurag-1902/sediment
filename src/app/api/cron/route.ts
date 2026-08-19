@@ -1,4 +1,4 @@
-import { postSyncMessage } from "@/server/slack";
+import { postSyncMessage, getSlackConfigForUser } from "@/server/slack";
 import { getPrisma } from "@/lib/krutai-server";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +43,16 @@ export async function GET() {
       continue;
     }
 
+    const config = await getSlackConfigForUser(project.ownerId);
+    if (!config) {
+      results.push({
+        projectId: project.id,
+        status: "skipped",
+        error: "Owner has not connected Slack workspace",
+      });
+      continue;
+    }
+
     try {
       const session = await prisma.syncSession.create({
         data: {
@@ -54,7 +64,8 @@ export async function GET() {
 
       const slackResult = await postSyncMessage(
         project.slackChannelId,
-        project.name
+        project.name,
+        project.ownerId
       );
 
       await prisma.syncSession.update({

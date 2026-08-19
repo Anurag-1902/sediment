@@ -76,12 +76,10 @@ function maskBotUserId(id: string | null | undefined) {
 
 interface SlackSettingsPageProps {
   appUrl: string;
-  hasEnvFallback: boolean;
 }
 
 export function SlackSettingsPage({
   appUrl,
-  hasEnvFallback,
 }: SlackSettingsPageProps) {
   const { session } = useAuth();
   const user = session?.user;
@@ -192,17 +190,9 @@ export function SlackSettingsPage({
                       <Badge className="bg-amber/10 text-amber border-0">
                         Not connected
                       </Badge>
-                      {hasEnvFallback ? (
-                        <p className="text-sm text-text-muted">
-                          Until connected, the app will use the default demo
-                          workspace.
-                        </p>
-                      ) : (
-                        <p className="text-sm text-text-muted">
-                          No Slack workspace configured. The app will not work
-                          until you connect your workspace.
-                        </p>
-                      )}
+                      <p className="text-sm text-text-muted">
+                        No Slack workspace connected. Connect your workspace to start using Sediment.
+                      </p>
                     </>
                   )}
                 </div>

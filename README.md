@@ -24,15 +24,14 @@ KRUTAI_SERVER_URL=http://krut-ai-backend:8000
 NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=http://localhost:3000
 APP_URL=http://localhost:3000
-SLACK_CLIENT_ID=your_slack_client_id
-SLACK_CLIENT_SECRET=your_slack_client_secret
-SLACK_SIGNING_SECRET=your_slack_signing_secret
-SLACK_BOT_TOKEN=xoxb-your-bot-token
+ENCRYPTION_KEY=your_32_byte_base64_key_run_openssl_rand_base64_32
 GOOGLE_CLIENT_ID=optional_google_oauth_client_id
 GOOGLE_CLIENT_SECRET=optional_google_oauth_client_secret
 ```
 
 **Important:** After deployment on Krut, update `NEXTAUTH_URL` and `APP_URL` to match your deployed public URL exactly (e.g., `https://your-project.projects.krut.ai`).
+
+**Note:** Slack credentials are managed per-user through the dashboard. Each user connects their own Slack workspace via Dashboard → Slack Integration. See the in-app guide for setup steps.
 
 ## Setup
 
@@ -55,13 +54,13 @@ GOOGLE_CLIENT_SECRET=optional_google_oauth_client_secret
 
 ## Slack App Setup
 
-1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app.
-2. Choose "From an app manifest" and paste the contents of `slack-manifest.json`.
-3. **Replace all placeholder URLs** (`https://your-app-url.com`) in the manifest with your actual deployed app URL before submitting.
-4. Install the app to your workspace.
-5. Copy the Bot User OAuth Token to `SLACK_BOT_TOKEN`.
-6. Copy the Signing Secret to `SLACK_SIGNING_SECRET`.
-7. Copy the Client ID and Client Secret to `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
+Each user connects their own Slack workspace through the in-app guide. As a user:
+
+1. Go to **Dashboard → Slack Integration** in the Sediment app.
+2. Follow the **Connection Guide** to create a Slack app from a manifest, install it to your workspace, and paste your credentials.
+3. The guide walks you through each step — no env variables needed.
+
+For local development, the app manifest is generated automatically in the dashboard with the correct `APP_URL` baked in.
 
 ## Cron Jobs
 

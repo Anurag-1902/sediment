@@ -76,7 +76,7 @@ export const projectRouter = createTRPCRouter({
 
       const resolvedMembers = [];
       for (const handle of memberHandles) {
-        const user = await resolveSlackUser(handle);
+          const user = await resolveSlackUser(handle, userId);
         if (!user) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -135,7 +135,7 @@ export const projectRouter = createTRPCRouter({
       if (memberHandles !== undefined) {
         const resolvedMembers = [];
         for (const handle of memberHandles) {
-          const user = await resolveSlackUser(handle);
+        const user = await resolveSlackUser(handle, userId);
           if (!user) {
             throw new TRPCError({
               code: "BAD_REQUEST",
