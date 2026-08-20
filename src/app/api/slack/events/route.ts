@@ -25,17 +25,17 @@ export async function POST(request: Request) {
   const rawBody = await request.text();
   const body = JSON.parse(rawBody);
 
-  if (body.type === "event_callback" && body.event?.type === "message") {
-    console.log("[events] RAW message event", JSON.stringify({
-      user: body.event.user,
-      thread_ts: body.event.thread_ts,
-      ts: body.event.ts,
-      channel: body.event.channel,
-      subtype: body.event.subtype,
-      bot_id: body.event.bot_id,
-      text: body.event.text?.slice(0, 40),
-    }));
-  }
+  recordEvent({
+    type: body.type,
+    eventType: body.event?.type,
+    user: body.event?.user,
+    thread_ts: body.event?.thread_ts,
+    ts: body.event?.ts,
+    subtype: body.event?.subtype,
+    bot_id: body.event?.bot_id,
+    channel: body.event?.channel,
+    textPreview: body.event?.text?.slice(0, 40),
+  }).catch(() => {});
 
   // Handle URL verification FIRST — no team_id or signature needed
   if (body.type === "url_verification") {
@@ -74,16 +74,6 @@ export async function POST(request: Request) {
     const event = body.event;
 
     if (event.type === "message") {
-      recordEvent({
-        user: event.user,
-        thread_ts: event.thread_ts,
-        ts: event.ts,
-        channel: event.channel,
-        subtype: event.subtype,
-        bot_id: event.bot_id,
-        text: event.text?.slice(0, 40),
-      });
-
       if (event.bot_id || event.subtype) {
         return Response.json({ ok: true });
       }

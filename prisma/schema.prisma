@@ -271,3 +271,11 @@ model SlackWorkspace {
 
   @@map("slack_workspaces")
 }
+
+model DebugEvent {
+  id        String   @id @default(cuid())
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("debug_events")
+}

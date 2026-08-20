@@ -1,11 +1,29 @@
-const g = globalThis as any;
-if (!g.__lastEvents) g.__lastEvents = [];
+import { getPrisma } from "@/lib/krutai-server";
 
-export function recordEvent(e: any) {
-  g.__lastEvents.unshift({ ...e, at: new Date().toISOString() });
-  g.__lastEvents = g.__lastEvents.slice(0, 10);
+export async function recordEvent(e: any) {
+  try {
+    const prisma = await getPrisma();
+    await prisma.debugEvent.create({ data: { payload: e } });
+    // Keep only the last 20
+    const all = await prisma.debugEvent.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: 20,
+      select: { id: true },
+    });
+    if (all.length > 0) {
+      await prisma.debugEvent.deleteMany({
+        where: { id: { in: all.map((r) => r.id) } },
+      });
+    }
+  } catch (err) {
+    console.error("[debug] recordEvent failed:", err);
+  }
 }
 
-export function getLastEvents() {
-  return g.__lastEvents ?? [];
+export async function getLastEvents() {
+  const prisma = await getPrisma();
+  return prisma.debugEvent.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
 }
