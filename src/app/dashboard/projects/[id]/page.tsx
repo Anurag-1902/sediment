@@ -252,7 +252,7 @@ function ProjectUpdates({ projectId }: { projectId: string }) {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">
-                {u.memberName ?? u.slackUserId}
+                {u.memberName ? `${u.memberName} (${u.slackUserId})` : u.slackUserId}
               </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(u.createdAt).toLocaleString()}
