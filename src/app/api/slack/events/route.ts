@@ -109,17 +109,21 @@ export async function POST(request: Request) {
         return Response.json({ ok: true });
       }
       if (workspaceUserId) {
-        const botUserId = await getBotUserId(workspaceUserId);
-        if (event.user === botUserId) {
-          return Response.json({ ok: true });
+        try {
+          const botUserId = await getBotUserId(workspaceUserId);
+          if (event.user === botUserId) {
+            return Response.json({ ok: true });
+          }
+        } catch (err) {
+          await recordCheckpoint("botcheck_failed", { error: String(err) }).catch(() => {});
+          // Continue anyway — we filter bot messages by bot_id/subtype above already
         }
       }
 
       if (event.thread_ts && event.user && event.text) {
-        // Fire and forget — don't await, so Slack gets fast 200
-        handleThreadReply(event).catch((err) =>
-          console.error("[events] async handleThreadReply failed:", err)
-        );
+        handleThreadReply(event).catch(async (err) => {
+          await recordCheckpoint("handleThreadReply_threw", { error: String(err) }).catch(() => {});
+        });
       }
       return Response.json({ ok: true });
     }
@@ -141,6 +145,10 @@ async function handleThreadReply(event: {
   user: string;
   text: string;
 }) {
+  await recordCheckpoint("handleThreadReply_entered", {
+    thread_ts: event.thread_ts,
+    user: event.user,
+  }).catch(() => {});
   const prisma = await getPrisma();
 
   console.log("[events] handleThreadReply called", {
