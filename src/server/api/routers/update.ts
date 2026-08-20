@@ -13,14 +13,22 @@ export const updateRouter = createTRPCRouter({
           id: input.projectId,
           OR: [{ ownerId: userId }, { members: { some: { userId } } }],
         },
+        include: { members: true },
       });
       if (!project) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
-      return prisma.devUpdate.findMany({
+      const updates = await prisma.devUpdate.findMany({
         where: { session: { projectId: input.projectId } },
         include: { session: { select: { scheduledAt: true } }, user: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
+      });
+      return updates.map((update) => {
+        const member = project.members.find((m) => m.slackUserId === update.slackUserId);
+        return {
+          ...update,
+          memberName: member?.slackHandle ?? null,
+        };
       });
     }),
 

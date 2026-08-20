@@ -245,13 +245,14 @@ function ProjectUpdates({ projectId }: { projectId: string }) {
         aiSummary: string | null;
         createdAt: Date;
         slackUserId: string;
+        memberName: string | null;
         user: { name: string | null } | null;
       }) => (
         <Card key={u.id}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">
-                {u.user?.name ?? u.slackUserId}
+                {u.memberName ?? u.slackUserId}
               </div>
               <div className="text-xs text-muted-foreground">
                 {new Date(u.createdAt).toLocaleString()}
