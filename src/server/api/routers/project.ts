@@ -85,7 +85,7 @@ export const projectRouter = createTRPCRouter({
         }
         resolvedMembers.push({
           slackUserId: user.id,
-          slackHandle: handle,
+          slackHandle: user.realName || user.name,
           role: "MEMBER",
         });
       }
@@ -145,7 +145,7 @@ export const projectRouter = createTRPCRouter({
           resolvedMembers.push({
             projectId: id,
             slackUserId: user.id,
-            slackHandle: handle,
+            slackHandle: user.realName || user.name,
             role: "MEMBER",
           });
         }

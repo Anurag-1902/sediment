@@ -154,15 +154,17 @@ const userCache = new Map<
 export async function resolveSlackUser(handle: string, userId: string) {
   const idPattern = /^@?(U[A-Z0-9]{8,10})$/;
   const idMatch = handle.match(idPattern);
-  if (idMatch) {
+    if (idMatch) {
     const client = await getSlackClientForUser(userId);
     try {
       const info = await client.users.info({ user: idMatch[1] });
       if (info.user && !info.user.deleted && !info.user.is_bot) {
+        const realName = info.user.profile?.real_name || (info.user as any).real_name;
+        const displayName = info.user.profile?.display_name;
         return {
           id: info.user.id!,
-          name: info.user.name ?? idMatch[1],
-          realName: info.user.profile?.real_name,
+          name: realName || displayName || info.user.name || idMatch[1],
+          realName: realName,
         };
       }
     } catch (e) {
