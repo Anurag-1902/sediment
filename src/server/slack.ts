@@ -84,6 +84,12 @@ export function verifySlackRequest(
   hmac.update(data);
   const computed = `v0=${hmac.digest("hex")}`;
 
+  console.log("[sig] computed vs received", {
+    computedPreview: computed.slice(0, 20),
+    receivedPreview: signature.slice(0, 20),
+    match: computed === signature,
+  });
+
   try {
     return crypto.timingSafeEqual(
       Buffer.from(computed, "utf8"),

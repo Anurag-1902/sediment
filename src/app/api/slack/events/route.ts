@@ -97,7 +97,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unknown workspace" }, { status: 401 });
   }
 
-  if (!verifySlackRequest(signingSecret, timestamp, rawBody, signature)) {
+  const sigValid = verifySlackRequest(signingSecret, timestamp, rawBody, signature);
+  await recordCheckpoint("signature_check", {
+    valid: sigValid,
+    hasSignature: !!signature,
+    hasTimestamp: !!timestamp,
+    signaturePreview: signature.slice(0, 15),
+    timestampValue: timestamp,
+    rawBodyLength: rawBody.length,
+    signingSecretLength: signingSecret.length,
+  }).catch(() => {});
+
+  if (!sigValid) {
     return new Response("Unauthorized", { status: 401 });
   }
 
