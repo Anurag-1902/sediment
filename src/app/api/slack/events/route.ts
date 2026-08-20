@@ -5,7 +5,7 @@ import {
   verifySlackRequest,
 } from "@/server/slack";
 import { extractTasks, summarizeUpdate, updateProjectContext } from "@/server/ai";
-import { recordEvent } from "@/lib/debug-events";
+import { recordEvent, recordCheckpoint } from "@/lib/debug-events";
 
 export const dynamic = "force-dynamic";
 
@@ -126,9 +126,11 @@ async function handleThreadReply(event: {
 
   if (!session) {
     console.log("[events] No matching ACTIVE session for thread_ts", event.thread_ts);
+    await recordCheckpoint("no_session", { thread_ts: event.thread_ts });
     return;
   }
   console.log("[events] Session found", { sessionId: session.id, projectId: session.projectId });
+  await recordCheckpoint("session_found", { sessionId: session.id, projectId: session.projectId });
 
   const member = await prisma.projectMember.findFirst({
     where: { projectId: session.projectId, slackUserId: event.user },
@@ -138,9 +140,11 @@ async function handleThreadReply(event: {
       slackUserId: event.user,
       projectId: session.projectId
     });
+    await recordCheckpoint("not_member", { user: event.user, projectId: session.projectId });
     return;
   }
   console.log("[events] Member validated", { memberId: member.id });
+  await recordCheckpoint("member_ok", { memberId: member.id });
 
   try {
     let aiSummary: string | null = null;
@@ -171,6 +175,7 @@ async function handleThreadReply(event: {
       },
     });
     console.log("[events] DevUpdate created", { updateId: update.id });
+    await recordCheckpoint("update_created", { updateId: update.id });
 
     for (const taskData of extractedTasks) {
       const normalizedStatus =
@@ -243,6 +248,7 @@ async function handleThreadReply(event: {
       });
     }
   } catch (err) {
+    await recordCheckpoint("processing_error", { error: String(err) });
     console.error("[events] handleThreadReply processing failed:", err);
   }
 }

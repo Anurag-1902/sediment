@@ -20,6 +20,17 @@ export async function recordEvent(e: any) {
   }
 }
 
+export async function recordCheckpoint(label: string, data: any) {
+  try {
+    const prisma = await getPrisma();
+    await prisma.debugEvent.create({
+      data: { payload: { checkpoint: label, ...data } },
+    });
+  } catch (err) {
+    console.error("[debug] recordCheckpoint failed:", err);
+  }
+}
+
 export async function getLastEvents() {
   const prisma = await getPrisma();
   return prisma.debugEvent.findMany({
