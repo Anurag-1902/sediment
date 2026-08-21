@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { X, Plus, Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { TeamMembersSelector } from "@/components/dashboard/team-members-selector";
 
 const TIMEZONES = [
   "UTC",
@@ -54,7 +55,6 @@ export default function NewProjectPage() {
   const [syncTime, setSyncTime] = useState("09:00");
   const [timezone, setTimezone] = useState("America/New_York");
   const [handles, setHandles] = useState<string[]>([]);
-  const [newHandle, setNewHandle] = useState("");
   const [customChannel, setCustomChannel] = useState(false);
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
@@ -71,18 +71,6 @@ export default function NewProjectPage() {
 
   const isSlackNotConnected =
     channelsError?.data?.code === "PRECONDITION_FAILED";
-
-  const handleAddHandle = () => {
-    const clean = newHandle.trim();
-    if (clean && !handles.includes(clean)) {
-      setHandles([...handles, clean]);
-      setNewHandle("");
-    }
-  };
-
-  const handleRemoveHandle = (h: string) => {
-    setHandles(handles.filter((x) => x !== h));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,42 +233,11 @@ export default function NewProjectPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Team Members (Slack handles)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newHandle}
-                    onChange={(e) => setNewHandle(e.target.value)}
-                    placeholder="@dev1"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddHandle();
-                      }
-                    }}
-                  />
-                  <Button type="button" variant="outline" onClick={handleAddHandle}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {handles.map((h) => (
-                    <span
-                      key={h}
-                      className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-3 py-1 text-sm text-text"
-                    >
-                      {h}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveHandle(h)}
-                        className="text-text-muted hover:text-text"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <TeamMembersSelector
+                value={handles}
+                onChange={setHandles}
+                hasSlackConnected={!isSlackNotConnected}
+              />
 
               <Button
                 type="submit"
