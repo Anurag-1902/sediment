@@ -35,7 +35,6 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const projectId = params.id as string;
   const [activeTab, setActiveTab] = useState("overview");
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: project, isLoading } = trpc.project.get.useQuery({ id: projectId });
   const { data: stats } = trpc.project.stats.useQuery({ id: projectId });
@@ -458,6 +457,7 @@ function ProjectSettings({ project }: { project: any }) {
   const [memberHandles, setMemberHandles] = useState<string[]>(
     project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
   );
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
 
