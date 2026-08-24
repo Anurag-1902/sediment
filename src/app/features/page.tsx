@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AnimatedIcon } from "@/components/animated-icon";
-import { AnimatedSection, AnimatedItem } from "@/components/animated-section";
 import {
   Hash,
   Clock,
@@ -33,8 +32,8 @@ const coreFeatures = [
       "Distributed teams respond on their own schedule across timezones. No more 9 AM standups that interrupt deep work. Updates roll in throughout the day and are synthesized automatically.",
   },
   {
-    title: "Natural Language Queries",
     icon: Search,
+    title: "Natural Language Queries",
     description:
       'Ask questions in plain English and get instant, accurate answers. "What did Sarah work on last week?" or "What\'s blocking the auth release?" — the context is always at your fingertips.',
   },
@@ -82,6 +81,8 @@ const moreFeatures = [
 ];
 
 export default function FeaturesPage() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Ambient glow */}
@@ -92,18 +93,21 @@ export default function FeaturesPage() {
 
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-6 pt-32 pb-20">
-        <div className="text-center">
+        <motion.div
+          className="text-center"
+          initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
           <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
             Everything you need for{" "}
-            <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-              better standups
-            </span>
+            <span className="text-amber font-semibold">better standups</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-muted">
             From daily prompts to natural language queries — Sediment gives your
             team the tools to capture context, surface insights, and move faster.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       {/* Core Features — alternating layout */}
@@ -113,18 +117,9 @@ export default function FeaturesPage() {
           return (
             <div
               key={feature.title}
-              className={`grid items-center gap-12 lg:grid-cols-2 ${isOdd ? "" : ""}`}
+              className="grid items-center gap-12 lg:grid-cols-2"
             >
-              <motion.div
-                className={`space-y-4 ${isOdd ? "lg:order-2" : ""}`}
-                initial={{ opacity: 0, x: isOdd ? 30 : -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{
-                  duration: 0.5,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
+              <div className={`space-y-4 ${isOdd ? "lg:order-2" : ""}`}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
                     <AnimatedIcon icon={feature.icon} className="h-5 w-5 text-amber" />
@@ -134,21 +129,12 @@ export default function FeaturesPage() {
                 <p className="leading-relaxed text-text-muted text-pretty">
                   {feature.description}
                 </p>
-              </motion.div>
-              <motion.div
-                className={`rounded-xl border border-border-custom bg-surface p-8 ${isOdd ? "lg:order-1" : ""}`}
-                initial={{ opacity: 0, x: isOdd ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{
-                  duration: 0.5,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
+              </div>
+              <div className={`rounded-xl border border-border-custom bg-surface p-8 ${isOdd ? "lg:order-1" : ""}`}>
                 <div className="flex h-32 items-center justify-center rounded-lg bg-amber/5">
-                  <AnimatedIcon icon={feature.icon} className="h-12 w-12 text-amber/40" />
+                  <feature.icon className="h-12 w-12 text-amber/40" />
                 </div>
-              </motion.div>
+              </div>
             </div>
           );
         })}
@@ -165,21 +151,53 @@ export default function FeaturesPage() {
           </p>
         </div>
 
-        <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {moreFeatures.map((f) => (
-            <AnimatedItem key={f.title}>
-              <div className="rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30 h-full">
-                <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-                  <AnimatedIcon icon={f.icon} className="h-5 w-5 text-amber" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-text">{f.title}</h3>
-                <p className="text-sm leading-relaxed text-text-muted">
-                  {f.description}
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* First item spans full width on mobile, 2 cols on md */}
+          <div className="md:col-span-2 rounded-xl border border-border-custom bg-surface p-8 transition-all hover:border-amber/30">
+            <div className="flex items-start gap-6">
+              <div className="mb-0 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={moreFeatures[0].icon} className="h-5 w-5 text-amber" />
+              </div>
+              <div>
+                <h3 className="mb-2 text-xl font-semibold text-text">{moreFeatures[0].title}</h3>
+                <p className="leading-relaxed text-text-muted">
+                  {moreFeatures[0].description}
                 </p>
               </div>
-            </AnimatedItem>
-          ))}
-        </AnimatedSection>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <AnimatedIcon icon={moreFeatures[1].icon} className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">{moreFeatures[1].title}</h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              {moreFeatures[1].description}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <AnimatedIcon icon={moreFeatures[2].icon} className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">{moreFeatures[2].title}</h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              {moreFeatures[2].description}
+            </p>
+          </div>
+          <div className="md:col-span-2 rounded-xl border border-border-custom bg-surface p-8 transition-all hover:border-amber/30">
+            <div className="flex items-start gap-6">
+              <div className="mb-0 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={moreFeatures[3].icon} className="h-5 w-5 text-amber" />
+              </div>
+              <div>
+                <h3 className="mb-2 text-xl font-semibold text-text">{moreFeatures[3].title}</h3>
+                <p className="leading-relaxed text-text-muted">
+                  {moreFeatures[3].description}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* CTA */}
@@ -190,9 +208,7 @@ export default function FeaturesPage() {
         <div className="relative rounded-2xl border border-border-custom bg-surface px-8 py-16 text-center">
           <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             Ready to transform your{" "}
-            <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-              standups?
-            </span>
+            <span className="text-amber font-semibold">standups?</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">
             Join hundreds of engineering teams using Sediment to run better

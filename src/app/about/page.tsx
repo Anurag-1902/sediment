@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AnimatedIcon } from "@/components/animated-icon";
-import { AnimatedSection, AnimatedItem } from "@/components/animated-section";
 import {
   Target,
   Sparkles,
   Users,
   Heart,
   ArrowRight,
-  Layers,
 } from "lucide-react";
 
 const values = [
@@ -42,6 +40,8 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Ambient glow */}
@@ -52,33 +52,26 @@ export default function AboutPage() {
 
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-6 pt-32 pb-20">
-        <div className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border-custom bg-surface px-4 py-1.5 text-sm text-text-muted mb-8 animate-pulse">
-            <Layers className="h-4 w-4 text-amber" />
-            About Sediment
-          </div>
+        <motion.div
+          className="text-center max-w-3xl mx-auto"
+          initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
           <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
             Standups shouldn&apos;t feel like{" "}
-            <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-              interruptions
-            </span>
+            <span className="text-amber font-semibold">interruptions</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-muted">
             We built Sediment because we were tired of standups that disrupted
             flow without creating real understanding. Your team deserves better.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       {/* The Problem */}
       <section className="relative mx-auto max-w-4xl px-6 py-16">
-        <motion.div
-          className="rounded-2xl border border-border-custom bg-surface px-8 py-12"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div className="rounded-2xl border border-border-custom bg-surface px-8 py-12">
           <h2 className="text-2xl font-bold text-text mb-4">The Problem</h2>
           <div className="space-y-4 text-text-muted leading-relaxed">
             <p>
@@ -98,7 +91,7 @@ export default function AboutPage() {
               team has shared.
             </p>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* What we believe */}
@@ -112,21 +105,22 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <AnimatedSection className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           {values.map((v) => (
-            <AnimatedItem key={v.title}>
-              <div className="rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30 h-full">
-                <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-                  <AnimatedIcon icon={v.icon} className="h-5 w-5 text-amber" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-text">{v.title}</h3>
-                <p className="text-sm leading-relaxed text-text-muted">
-                  {v.description}
-                </p>
+            <div
+              key={v.title}
+              className="rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30 h-full"
+            >
+              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={v.icon} className="h-5 w-5 text-amber" />
               </div>
-            </AnimatedItem>
+              <h3 className="mb-2 text-lg font-semibold text-text">{v.title}</h3>
+              <p className="text-sm leading-relaxed text-text-muted">
+                {v.description}
+              </p>
+            </div>
           ))}
-        </AnimatedSection>
+        </div>
       </section>
 
       {/* CTA */}
@@ -137,9 +131,7 @@ export default function AboutPage() {
         <div className="relative rounded-2xl border border-border-custom bg-surface px-8 py-16 text-center">
           <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             Ready to run standups that{" "}
-            <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-              respect your time?
-            </span>
+            <span className="text-amber font-semibold">respect your time?</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">
             Join hundreds of engineering teams using Sediment to capture context

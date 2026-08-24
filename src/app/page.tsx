@@ -4,11 +4,10 @@ import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { AnimatedIcon } from "@/components/animated-icon";
-import { AnimatedSection, AnimatedItem } from "@/components/animated-section";
 import {
   Layers,
   Slack,
@@ -28,7 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 
-const features = [
+const topFeatures = [
   {
     icon: Hash,
     title: "Slack-Native Standups",
@@ -41,6 +40,9 @@ const features = [
     description:
       "Team members respond on their own schedule. Perfect for distributed teams across timezones.",
   },
+];
+
+const bottomFeatures = [
   {
     icon: Search,
     title: "Natural Language Queries",
@@ -67,7 +69,23 @@ const features = [
   },
 ];
 
-function FeatureCard({ icon: Icon, title, description }: (typeof features)[0]) {
+function LargeFeatureCard({ icon: Icon, title, description }: (typeof topFeatures)[0]) {
+  return (
+    <div className="group flex items-start gap-6 rounded-xl border border-border-custom bg-surface p-8 transition-all hover:border-amber/30">
+      <div className="shrink-0">
+        <div className="inline-flex rounded-lg bg-amber/10 p-4">
+          <Icon className="h-6 w-6 text-amber" />
+        </div>
+      </div>
+      <div>
+        <h3 className="mb-2 text-xl font-semibold text-text">{title}</h3>
+        <p className="leading-relaxed text-text-muted">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function SmallFeatureCard({ icon: Icon, title, description }: (typeof bottomFeatures)[0]) {
   return (
     <motion.div
       className="group rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30"
@@ -86,6 +104,7 @@ function FeatureCard({ icon: Icon, title, description }: (typeof features)[0]) {
 export default function Home() {
   const { session } = useAuth();
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (session) {
@@ -113,17 +132,15 @@ export default function Home() {
       <section className="relative mx-auto max-w-7xl px-6 py-24 lg:py-32">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-8">
           {/* Left - Text */}
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border-custom bg-surface px-4 py-1.5 text-sm text-text-muted">
-              <Slack className="h-4 w-4 text-amber" />
-              Native Slack Integration
-            </div>
-
+          <motion.div
+            className="space-y-8"
+            initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
             <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
               Standups that{" "}
-              <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-                build context
-              </span>
+              <span className="text-amber font-semibold">build context</span>
             </h1>
 
             <p className="max-w-lg text-lg leading-relaxed text-text-muted text-pretty">
@@ -163,7 +180,7 @@ export default function Home() {
                 <span>Resend</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right - Visual */}
           <div className="relative">
@@ -215,19 +232,26 @@ export default function Home() {
           </p>
         </div>
 
-        <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <AnimatedItem key={f.title}>
-              <FeatureCard {...f} />
-            </AnimatedItem>
-          ))}
-        </AnimatedSection>
+        <div className="space-y-6">
+          {/* Top 2: larger, horizontal cards */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {topFeatures.map((f) => (
+              <LargeFeatureCard key={f.title} {...f} />
+            ))}
+          </div>
+
+          {/* Bottom 4: standard cards in 2x2 */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {bottomFeatures.map((f) => (
+              <SmallFeatureCard key={f.title} {...f} />
+            ))}
+          </div>
+        </div>
 
         {/* Showcase Cards */}
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {/* Seamless Team Sync */}
           <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
-            {/* Connected nodes visual */}
             <div className="relative h-[260px] overflow-hidden">
               <Image
                 src="/feature-sync.jpg"
@@ -251,7 +275,6 @@ export default function Home() {
 
           {/* Living Context */}
           <div className="group relative overflow-hidden rounded-xl border border-border-custom bg-slate">
-            {/* 3D sediment layers visual */}
             <div className="relative h-[260px] overflow-hidden">
               <Image
                 src="/feature-context.jpg"
@@ -288,12 +311,11 @@ export default function Home() {
           <div className="grid items-center gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-5xl font-bold text-border-custom">01</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
                   <AnimatedIcon icon={MessageCircle} className="h-5 w-5 text-amber" />
                 </div>
+                <h3 className="text-2xl font-bold text-text">Daily Slack Prompts</h3>
               </div>
-              <h3 className="text-2xl font-bold text-text">Daily Slack Prompts</h3>
               <p className="leading-relaxed text-text-muted">
                 Sediment sends a simple async prompt to each team member.
                 &quot;What did you work on? Any blockers?&quot;
@@ -344,14 +366,13 @@ export default function Home() {
             </div>
             <div className="order-1 space-y-4 lg:order-2">
               <div className="flex items-center gap-3">
-                <span className="text-5xl font-bold text-border-custom">02</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
                   <AnimatedIcon icon={Database} className="h-5 w-5 text-amber" />
                 </div>
+                <h3 className="text-2xl font-bold text-text">
+                  Context Accumulates
+                </h3>
               </div>
-              <h3 className="text-2xl font-bold text-text">
-                Context Accumulates
-              </h3>
               <p className="leading-relaxed text-text-muted">
                 Responses are parsed, structured, and layered into your
                 project&apos;s living memory. Blockers are flagged automatically.
@@ -367,12 +388,11 @@ export default function Home() {
           <div className="grid items-center gap-8 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-5xl font-bold text-border-custom">03</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
                   <AnimatedIcon icon={Search} className="h-5 w-5 text-amber" />
                 </div>
+                <h3 className="text-2xl font-bold text-text">Query Naturally</h3>
               </div>
-              <h3 className="text-2xl font-bold text-text">Query Naturally</h3>
               <p className="leading-relaxed text-text-muted">
                 PMs and stakeholders ask questions in plain English. Get instant,
                 accurate answers from accumulated context.
@@ -407,73 +427,55 @@ export default function Home() {
           </p>
         </div>
 
-        <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatedItem>
-            <motion.div
-              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
-              whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <AnimatedIcon icon={ExternalLink} className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Create a Slack App
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Head to api.slack.com/apps, create a new app from our ready-made
+              manifest. Takes 30 seconds.
+            </p>
+            <a
+              href="https://api.slack.com/apps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-1 text-sm text-amber hover:underline"
             >
-              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-                <AnimatedIcon icon={ExternalLink} className="h-5 w-5 text-amber" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-text">
-                Create a Slack App
-              </h3>
-              <p className="text-sm leading-relaxed text-text-muted">
-                Head to api.slack.com/apps, create a new app from our ready-made
-                manifest. Takes 30 seconds.
-              </p>
-              <a
-                href="https://api.slack.com/apps"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1 text-sm text-amber hover:underline"
-              >
-                Open Slack API
-                <ArrowRight className="h-3 w-3" />
-              </a>
-            </motion.div>
-          </AnimatedItem>
+              Open Slack API
+              <ArrowRight className="h-3 w-3" />
+            </a>
+          </div>
 
-          <AnimatedItem>
-            <motion.div
-              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
-              whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-                <AnimatedIcon icon={Key} className="h-5 w-5 text-amber" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-text">
-                Grab Your Credentials
-              </h3>
-              <p className="text-sm leading-relaxed text-text-muted">
-                Copy your Client ID, Client Secret, Signing Secret, and Bot Token
-                from the Slack dashboard. We encrypt everything.
-              </p>
-            </motion.div>
-          </AnimatedItem>
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <AnimatedIcon icon={Key} className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Grab Your Credentials
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Copy your Client ID, Client Secret, Signing Secret, and Bot Token
+              from the Slack dashboard. We encrypt everything.
+            </p>
+          </div>
 
-          <AnimatedItem>
-            <motion.div
-              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
-              whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-                <AnimatedIcon icon={Zap} className="h-5 w-5 text-amber" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-text">
-                Start Running Standups
-              </h3>
-              <p className="text-sm leading-relaxed text-text-muted">
-                Paste your credentials, pick a channel, set a sync time. Your
-                first standup posts automatically.
-              </p>
-            </motion.div>
-          </AnimatedItem>
-        </AnimatedSection>
+          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
+            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+              <AnimatedIcon icon={Zap} className="h-5 w-5 text-amber" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-text">
+              Start Running Standups
+            </h3>
+            <p className="text-sm leading-relaxed text-text-muted">
+              Paste your credentials, pick a channel, set a sync time. Your
+              first standup posts automatically.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ==================== CTA ==================== */}
@@ -487,9 +489,7 @@ export default function Home() {
           </div>
           <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
             Ready to build your team&apos;s{" "}
-            <span className="bg-gradient-to-r from-amber to-amber-light bg-clip-text text-transparent">
-              living context?
-            </span>
+            <span className="text-amber font-semibold">living context?</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">
             Join hundreds of engineering teams using Sediment to run better
