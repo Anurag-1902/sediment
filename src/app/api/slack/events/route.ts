@@ -253,6 +253,8 @@ async function handleThreadReply(event: {
           data: {
             status: normalizedStatus,
             lastMentionedAt: new Date(),
+            assigneeSlackId: member.slackUserId,
+            assigneeName: member.slackHandle ?? null,
           },
         });
       } else {
@@ -262,6 +264,8 @@ async function handleThreadReply(event: {
             description: taskData.description,
             status: normalizedStatus,
             assignedToUserId: member.userId ?? null,
+            assigneeSlackId: member.slackUserId,
+            assigneeName: member.slackHandle ?? null,
             lastMentionedAt: new Date(),
             createdFromUpdateId: update.id,
           },

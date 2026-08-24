@@ -192,6 +192,8 @@ model Task {
   status              TaskStatus  @default(OPEN)
   assignedToUserId    String?     @map("assigned_to_user_id")
   assignedTo          User?       @relation(fields: [assignedToUserId], references: [id], onDelete: SetNull, name: "AssignedTasks")
+  assigneeSlackId     String?     @map("assignee_slack_id")
+  assigneeName        String?     @map("assignee_name")
   lastMentionedAt     DateTime?   @map("last_mentioned_at")
   createdFromUpdateId String?     @map("created_from_update_id")
   createdFromUpdate   DevUpdate?  @relation(fields: [createdFromUpdateId], references: [id], onDelete: SetNull, name: "CreatedFromUpdate")

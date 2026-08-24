@@ -406,14 +406,28 @@ export function SlackSettingsPage({
                           From OAuth & Permissions page
                         </h4>
                         <p className="text-xs text-text-muted mb-3">
-                          Left sidebar &rarr; OAuth & Permissions
+                          In the left sidebar of your Slack app settings, click &ldquo;OAuth &amp; Permissions&rdquo;
                         </p>
                         <div className="space-y-3">
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-sm text-text-muted shrink-0">Bot User OAuth Token</span>
-                            <span className="text-sm text-text">Starts with xoxb-, copy the full token</span>
+                          <div>
+                            <span className="text-sm text-text font-medium block">Bot User OAuth Token</span>
+                            <p className="text-xs text-text-muted mt-1">
+                              At the top of the page, under &ldquo;OAuth Tokens for Your Workspace&rdquo;,
+                              you&apos;ll see a token starting with <code className="text-amber">xoxb-</code>.
+                              Click &ldquo;Copy&rdquo; to copy the full token. If you don&apos;t see it,
+                              click &ldquo;Install to Workspace&rdquo; first (Step 5).
+                            </p>
                           </div>
                         </div>
+                        <a
+                          href="https://api.slack.com/apps"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-amber hover:underline font-medium text-sm mt-3"
+                        >
+                          Open Slack API Dashboard
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       </div>
                     </div>
                     <p className="text-xs text-text-muted italic mt-1">

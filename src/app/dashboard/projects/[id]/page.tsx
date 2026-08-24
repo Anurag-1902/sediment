@@ -324,6 +324,7 @@ function ProjectTasks({ projectId }: { projectId: string }) {
                 description: string;
                 status: string;
                 assignedTo: { name: string | null } | null;
+                assigneeName: string | null;
                 lastMentionedAt: Date | null;
               }) => (
                 <Card key={task.id} className="cursor-pointer hover:shadow-sm transition-shadow">
@@ -331,7 +332,7 @@ function ProjectTasks({ projectId }: { projectId: string }) {
                     <p className="text-sm font-medium">{task.description}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {task.assignedTo?.name ?? "Unassigned"}
+                        {task.assignedTo?.name ?? task.assigneeName ?? "Unassigned"}
                       </span>
                         <select
                           className="text-xs border border-border rounded px-2 py-1 bg-charcoal text-text"
