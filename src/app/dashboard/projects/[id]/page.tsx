@@ -35,6 +35,7 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const projectId = params.id as string;
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: project, isLoading } = trpc.project.get.useQuery({ id: projectId });
   const { data: stats } = trpc.project.stats.useQuery({ id: projectId });
@@ -718,19 +719,29 @@ function ProjectSettings({ project }: { project: any }) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Deleting a project will remove all associated updates, tasks, and history.
+            Deleting a project will permanently remove all associated updates, tasks, and history. This cannot be undone.
           </p>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (confirm("Are you sure you want to delete this project?")) {
-                deleteProject.mutate({ id: project.id });
-              }
-            }}
-            disabled={deleteProject.isPending}
-          >
-            Delete Project
-          </Button>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm text-text-muted block mb-1">
+                Type <span className="text-text font-semibold">{project.name}</span> to confirm
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-border-custom bg-charcoal px-3 py-2 text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                placeholder={project.name}
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => deleteProject.mutate({ id: project.id })}
+              disabled={deleteProject.isPending || deleteConfirmText !== project.name}
+            >
+              {deleteProject.isPending ? "Deleting..." : "Permanently Delete Project"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
