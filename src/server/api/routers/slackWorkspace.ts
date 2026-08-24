@@ -17,6 +17,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
       workspaceName: workspace.workspaceName,
       workspaceId: workspace.workspaceId,
       botUserId: workspace.botUserId,
+      clientId: workspace.clientIdEnc ? decrypt(workspace.clientIdEnc) : null,
       hasClientId: Boolean(workspace.clientIdEnc),
       hasClientSecret: Boolean(workspace.clientSecretEnc),
       hasSigningSecret: Boolean(workspace.signingSecretEnc),
@@ -29,21 +30,36 @@ export const slackWorkspaceRouter = createTRPCRouter({
       z.object({
         workspaceName: z.string().min(1),
         clientId: z.string().min(1),
-        clientSecret: z.string().min(1),
-        signingSecret: z.string().min(1),
-        botToken: z.string().min(1),
+        clientSecret: z.string(),
+        signingSecret: z.string(),
+        botToken: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
 
-      const encrypted = {
+      const existing = await prisma.slackWorkspace.findUnique({
+        where: { userId },
+      });
+
+      // Only encrypt and update secrets that were actually provided
+      const encrypted: Record<string, string> = {
         clientIdEnc: encrypt(input.clientId),
-        clientSecretEnc: encrypt(input.clientSecret),
-        signingSecretEnc: encrypt(input.signingSecret),
-        botTokenEnc: encrypt(input.botToken),
       };
+      if (input.clientSecret) encrypted.clientSecretEnc = encrypt(input.clientSecret);
+      if (input.signingSecret) encrypted.signingSecretEnc = encrypt(input.signingSecret);
+      if (input.botToken) encrypted.botTokenEnc = encrypt(input.botToken);
+
+      // For new workspaces, require all fields
+      if (!existing) {
+        if (!input.clientSecret || !input.signingSecret || !input.botToken) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "All credentials are required for initial setup",
+          });
+        }
+      }
 
       const workspace = await prisma.slackWorkspace.upsert({
         where: { userId },
@@ -54,7 +70,10 @@ export const slackWorkspaceRouter = createTRPCRouter({
         create: {
           userId,
           workspaceName: input.workspaceName,
-          ...encrypted,
+          clientIdEnc: encrypted.clientIdEnc,
+          clientSecretEnc: encrypted.clientSecretEnc!,
+          signingSecretEnc: encrypted.signingSecretEnc!,
+          botTokenEnc: encrypted.botTokenEnc!,
         },
       });
 

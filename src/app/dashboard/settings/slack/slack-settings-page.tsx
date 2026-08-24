@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -124,6 +124,16 @@ export function SlackSettingsPage({
     signingSecret: "",
     botToken: "",
   });
+
+  useEffect(() => {
+    if (workspace) {
+      setForm((f) => ({
+        ...f,
+        workspaceName: workspace.workspaceName || f.workspaceName,
+        clientId: workspace.clientId || f.clientId,
+      }));
+    }
+  }, [workspace]);
 
   const [showSecret, setShowSecret] = useState({
     clientSecret: false,
@@ -475,6 +485,7 @@ export function SlackSettingsPage({
                     clientSecret: !s.clientSecret,
                   }))
                 }
+                placeholder={isConnected ? "••••••••  (saved, enter new to replace)" : ""}
               />
 
               <SecretInput
@@ -488,6 +499,7 @@ export function SlackSettingsPage({
                     signingSecret: !s.signingSecret,
                   }))
                 }
+                placeholder={isConnected ? "••••••••  (saved, enter new to replace)" : ""}
               />
 
               <SecretInput
@@ -498,7 +510,7 @@ export function SlackSettingsPage({
                 onToggle={() =>
                   setShowSecret((s) => ({ ...s, botToken: !s.botToken }))
                 }
-                placeholder="xoxb-..."
+                placeholder={isConnected ? "••••••••  (saved, enter new to replace)" : "xoxb-..."}
               />
 
               <div className="flex items-center gap-2 pt-2">
