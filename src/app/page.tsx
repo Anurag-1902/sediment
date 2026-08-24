@@ -4,8 +4,11 @@ import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { AnimatedIcon } from "@/components/animated-icon";
+import { AnimatedSection, AnimatedItem } from "@/components/animated-section";
 import {
   Layers,
   Slack,
@@ -66,13 +69,17 @@ const features = [
 
 function FeatureCard({ icon: Icon, title, description }: (typeof features)[0]) {
   return (
-    <div className="group rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30">
+    <motion.div
+      className="group rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30"
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
       <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-        <Icon className="h-5 w-5 text-amber" />
+        <AnimatedIcon icon={Icon} className="h-5 w-5 text-amber" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-text">{title}</h3>
       <p className="text-sm leading-relaxed text-text-muted">{description}</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -208,11 +215,13 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <FeatureCard key={f.title} {...f} />
+            <AnimatedItem key={f.title}>
+              <FeatureCard {...f} />
+            </AnimatedItem>
           ))}
-        </div>
+        </AnimatedSection>
 
         {/* Showcase Cards */}
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -281,7 +290,7 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">01</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
-                  <MessageCircle className="h-5 w-5 text-amber" />
+                  <AnimatedIcon icon={MessageCircle} className="h-5 w-5 text-amber" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-text">Daily Slack Prompts</h3>
@@ -337,7 +346,7 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">02</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
-                  <Database className="h-5 w-5 text-amber" />
+                  <AnimatedIcon icon={Database} className="h-5 w-5 text-amber" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-text">
@@ -360,7 +369,7 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="text-5xl font-bold text-border-custom">03</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber/10">
-                  <Search className="h-5 w-5 text-amber" />
+                  <AnimatedIcon icon={Search} className="h-5 w-5 text-amber" />
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-text">Query Naturally</h3>
@@ -398,55 +407,73 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
-            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-              <ExternalLink className="h-5 w-5 text-amber" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold text-text">
-              Create a Slack App
-            </h3>
-            <p className="text-sm leading-relaxed text-text-muted">
-              Head to api.slack.com/apps, create a new app from our ready-made
-              manifest. Takes 30 seconds.
-            </p>
-            <a
-              href="https://api.slack.com/apps"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1 text-sm text-amber hover:underline"
+        <AnimatedSection className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatedItem>
+            <motion.div
+              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              Open Slack API
-              <ArrowRight className="h-3 w-3" />
-            </a>
-          </div>
+              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={ExternalLink} className="h-5 w-5 text-amber" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-text">
+                Create a Slack App
+              </h3>
+              <p className="text-sm leading-relaxed text-text-muted">
+                Head to api.slack.com/apps, create a new app from our ready-made
+                manifest. Takes 30 seconds.
+              </p>
+              <a
+                href="https://api.slack.com/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1 text-sm text-amber hover:underline"
+              >
+                Open Slack API
+                <ArrowRight className="h-3 w-3" />
+              </a>
+            </motion.div>
+          </AnimatedItem>
 
-          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
-            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-              <Key className="h-5 w-5 text-amber" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold text-text">
-              Grab Your Credentials
-            </h3>
-            <p className="text-sm leading-relaxed text-text-muted">
-              Copy your Client ID, Client Secret, Signing Secret, and Bot Token
-              from the Slack dashboard. We encrypt everything.
-            </p>
-          </div>
+          <AnimatedItem>
+            <motion.div
+              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={Key} className="h-5 w-5 text-amber" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-text">
+                Grab Your Credentials
+              </h3>
+              <p className="text-sm leading-relaxed text-text-muted">
+                Copy your Client ID, Client Secret, Signing Secret, and Bot Token
+                from the Slack dashboard. We encrypt everything.
+              </p>
+            </motion.div>
+          </AnimatedItem>
 
-          <div className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30">
-            <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
-              <Zap className="h-5 w-5 text-amber" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold text-text">
-              Start Running Standups
-            </h3>
-            <p className="text-sm leading-relaxed text-text-muted">
-              Paste your credentials, pick a channel, set a sync time. Your
-              first standup posts automatically.
-            </p>
-          </div>
-        </div>
+          <AnimatedItem>
+            <motion.div
+              className="rounded-xl border border-border bg-surface p-6 transition hover:border-amber/30"
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
+                <AnimatedIcon icon={Zap} className="h-5 w-5 text-amber" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-text">
+                Start Running Standups
+              </h3>
+              <p className="text-sm leading-relaxed text-text-muted">
+                Paste your credentials, pick a channel, set a sync time. Your
+                first standup posts automatically.
+              </p>
+            </motion.div>
+          </AnimatedItem>
+        </AnimatedSection>
       </section>
 
       {/* ==================== CTA ==================== */}

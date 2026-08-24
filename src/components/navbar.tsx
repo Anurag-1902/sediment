@@ -29,7 +29,10 @@ export function Navbar() {
           <span className="text-lg font-semibold text-text">Sediment</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8" />
+        <div className="hidden md:flex items-center gap-6">
+          <Link href="/features" className="text-sm text-text-muted hover:text-text transition-colors">Features</Link>
+          <Link href="/about" className="text-sm text-text-muted hover:text-text transition-colors">About</Link>
+        </div>
 
         <div className="flex items-center gap-4">
           {isLoading ? (
