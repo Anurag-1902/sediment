@@ -58,7 +58,7 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
+          <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance font-[family-name:var(--font-display)]">
             Standups shouldn&apos;t feel like{" "}
             <span className="text-amber font-semibold">interruptions</span>
           </h1>
@@ -72,7 +72,7 @@ export default function AboutPage() {
       {/* The Problem */}
       <section className="relative mx-auto max-w-4xl px-6 py-16">
         <div className="rounded-2xl border border-border-custom bg-surface px-8 py-12">
-          <h2 className="text-2xl font-bold text-text mb-4">The Problem</h2>
+          <h2 className="text-2xl font-bold text-text mb-4 font-[family-name:var(--font-display)]">The Problem</h2>
           <div className="space-y-4 text-text-muted leading-relaxed">
             <p>
               Traditional standups force everyone into a synchronous meeting at
@@ -97,7 +97,7 @@ export default function AboutPage() {
       {/* What we believe */}
       <section className="relative mx-auto max-w-6xl px-6 py-16">
         <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl font-[family-name:var(--font-display)]">
             What we believe
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">
@@ -129,7 +129,7 @@ export default function AboutPage() {
           <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber/5 blur-3xl" />
         </div>
         <div className="relative rounded-2xl border border-border-custom bg-surface px-8 py-16 text-center">
-          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance font-[family-name:var(--font-display)]">
             Ready to run standups that{" "}
             <span className="text-amber font-semibold">respect your time?</span>
           </h2>

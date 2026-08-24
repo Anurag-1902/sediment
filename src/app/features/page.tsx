@@ -99,7 +99,7 @@ export default function FeaturesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
+          <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance font-[family-name:var(--font-display)]">
             Everything you need for{" "}
             <span className="text-amber font-semibold">better standups</span>
           </h1>
@@ -143,7 +143,7 @@ export default function FeaturesPage() {
       {/* And more */}
       <section className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl font-[family-name:var(--font-display)]">
             And more
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-muted">

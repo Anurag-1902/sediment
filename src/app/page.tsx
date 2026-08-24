@@ -89,7 +89,7 @@ function SmallFeatureCard({ icon: Icon, title, description }: (typeof bottomFeat
   return (
     <motion.div
       className="group rounded-xl border border-border-custom bg-surface p-6 transition-all hover:border-amber/30"
-      whileHover={{ y: -4 }}
+      whileHover={{ borderColor: "rgba(217, 119, 6, 0.3)" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       <div className="mb-4 inline-flex rounded-lg bg-amber/10 p-3">
@@ -138,7 +138,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance">
+            <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl lg:text-6xl text-balance font-[family-name:var(--font-display)]">
               Standups that{" "}
               <span className="text-amber font-semibold">build context</span>
             </h1>
@@ -169,17 +169,6 @@ export default function Home() {
               </a>
             </div>
 
-            <div className="border-t border-border-custom pt-6">
-              <p className="mb-4 text-sm text-text-muted">
-                Trusted by engineering teams at
-              </p>
-              <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-text-muted/60">
-                <span>Vercel</span>
-                <span>Linear</span>
-                <span>Raycast</span>
-                <span>Resend</span>
-              </div>
-            </div>
           </motion.div>
 
           {/* Right - Visual */}
@@ -223,7 +212,7 @@ export default function Home() {
       {/* ==================== FEATURES ==================== */}
       <section id="features" className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance font-[family-name:var(--font-display)]">
             Standups that actually work
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
@@ -298,7 +287,7 @@ export default function Home() {
       {/* ==================== HOW IT WORKS ==================== */}
       <section id="how-it-works" className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance font-[family-name:var(--font-display)]">
             How Sediment works
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
@@ -419,7 +408,7 @@ export default function Home() {
       {/* ==================== CONNECT IN 3 STEPS ==================== */}
       <section className="relative mx-auto max-w-7xl px-6 py-24">
         <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance font-[family-name:var(--font-display)]">
             Connect in minutes
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-text-muted">
@@ -487,7 +476,7 @@ export default function Home() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber to-amber-dark">
             <Layers className="h-8 w-8 text-charcoal" />
           </div>
-          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance">
+          <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-text sm:text-4xl text-balance font-[family-name:var(--font-display)]">
             Ready to build your team&apos;s{" "}
             <span className="text-amber font-semibold">living context?</span>
           </h2>
