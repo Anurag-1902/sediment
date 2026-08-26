@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -131,6 +131,18 @@
   --sidebar-accent-foreground: #FAFAF9;
   --sidebar-border: #44403C;
   --sidebar-ring: #D97706;
+}
+
+.light {
+  --color-charcoal: #FAFAF9;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F5F5F4;
+  --color-text: #1C1917;
+  --color-text-muted: #57534E;
+  --color-border-custom: #E7E5E4;
+  --color-amber: #D97706;
+  --color-amber-light: #F59E0B;
+  --color-amber-dark: #B45309;
 }
 
 @layer base {
