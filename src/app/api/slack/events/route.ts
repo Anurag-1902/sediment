@@ -7,6 +7,26 @@ import {
 import { extractTasks, summarizeUpdate, updateProjectContext } from "@/server/ai";
 import { recordEvent, recordCheckpoint } from "@/lib/debug-events";
 
+async function resolveSlackMention(
+  slackUserId: string,
+  projectId: string,
+  prisma: any
+): Promise<{ slackUserId: string; name: string } | null> {
+  const member = await prisma.projectMember.findFirst({
+    where: { projectId, slackUserId },
+  });
+  if (member) {
+    return { slackUserId: member.slackUserId, name: member.slackHandle ?? slackUserId };
+  }
+  return null;
+}
+
+function extractMentionedUserId(text: string): string | null {
+  // Slack formats mentions as <@U07XXXXXXXX> or <@U07XXXXXXXX|name>
+  const match = text.match(/<@(U[A-Z0-9]+)(?:\|[^>]*)?>/);
+  return match ? match[1] : null;
+}
+
 export const dynamic = "force-dynamic";
 
 const botUserIdCache = new Map<string, string | null>();
@@ -198,7 +218,7 @@ async function handleThreadReply(event: {
 
   try {
     let aiSummary: string | null = null;
-    let extractedTasks: Array<{ description: string; status: string }> = [];
+    let extractedTasks: Array<{ description: string; status: string; assignee: string | null }> = [];
 
     try {
       aiSummary = await summarizeUpdate(event.text);
@@ -239,6 +259,21 @@ async function handleThreadReply(event: {
                 ? "CLOSED"
                 : "OPEN";
 
+      // Determine assignee: tagged person or message sender
+      let assigneeSlackId = member.slackUserId;
+      let assigneeName = member.slackHandle ?? null;
+
+      if (taskData.assignee) {
+        const mentionedId = extractMentionedUserId(taskData.assignee);
+        if (mentionedId && mentionedId !== member.slackUserId) {
+          const mentioned = await resolveSlackMention(mentionedId, session.projectId, prisma);
+          if (mentioned) {
+            assigneeSlackId = mentioned.slackUserId;
+            assigneeName = mentioned.name;
+          }
+        }
+      }
+
       const existingTask = await prisma.task.findFirst({
         where: {
           projectId: session.projectId,
@@ -253,8 +288,8 @@ async function handleThreadReply(event: {
           data: {
             status: normalizedStatus,
             lastMentionedAt: new Date(),
-            assigneeSlackId: member.slackUserId,
-            assigneeName: member.slackHandle ?? null,
+            assigneeSlackId,
+            assigneeName,
           },
         });
       } else {
@@ -264,8 +299,8 @@ async function handleThreadReply(event: {
             description: taskData.description,
             status: normalizedStatus,
             assignedToUserId: member.userId ?? null,
-            assigneeSlackId: member.slackUserId,
-            assigneeName: member.slackHandle ?? null,
+            assigneeSlackId,
+            assigneeName,
             lastMentionedAt: new Date(),
             createdFromUpdateId: update.id,
           },
