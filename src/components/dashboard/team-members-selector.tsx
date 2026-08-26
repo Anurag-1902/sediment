@@ -124,7 +124,7 @@ export function TeamMembersSelector({
           </div>
 
           {dropdownOpen && (
-            <div className="absolute z-10 w-full mt-1 bg-charcoal border border-border rounded-lg shadow-lg max-h-[320px] flex flex-col">
+            <div className="absolute z-10 w-full mt-1 bg-charcoal border border-border rounded-lg shadow-lg max-h-[400px] flex flex-col">
               <div className="p-2 border-b border-border">
                 <input
                   type="text"
@@ -136,7 +136,7 @@ export function TeamMembersSelector({
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
-              <div className="max-h-80 overflow-y-scroll divide-y divide-border scrollbar-thin">
+              <div className="flex-1 overflow-y-auto divide-y divide-border scrollbar-thin">
                 {!workspaceUsers ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <div

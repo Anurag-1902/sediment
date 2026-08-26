@@ -168,7 +168,9 @@ export default function NewProjectPage() {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select channel" />
+                      <SelectValue placeholder="Select channel">
+                        {channelName ? `#${channelName}` : "Select channel"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {channels.map((c: { id: string; name: string }) => (

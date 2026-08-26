@@ -28,7 +28,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
   save: protectedProcedure
     .input(
       z.object({
-        workspaceName: z.string().min(1),
+        workspaceName: z.string().optional().default("My Workspace"),
         clientId: z.string().min(1),
         clientSecret: z.string(),
         signingSecret: z.string(),

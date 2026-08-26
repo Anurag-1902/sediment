@@ -467,17 +467,6 @@ export function SlackSettingsPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Workspace name</Label>
-                <Input
-                  value={form.workspaceName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, workspaceName: e.target.value }))
-                  }
-                  placeholder="My Workspace"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label>Client ID</Label>
                 <Input
                   value={form.clientId}
@@ -534,10 +523,6 @@ export function SlackSettingsPage({
                       toast.error("Client ID is required");
                       return;
                     }
-                    if (!form.workspaceName.trim()) {
-                      toast.error("Workspace name is required");
-                      return;
-                    }
                     if (
                       !workspace &&
                       (!form.clientSecret ||
@@ -549,12 +534,14 @@ export function SlackSettingsPage({
                       );
                       return;
                     }
-                    saveMutation.mutate(form);
+                    saveMutation.mutate({
+                      ...form,
+                      workspaceName: form.workspaceName || "My Workspace",
+                    });
                   }}
                   disabled={
                     saveMutation.isPending ||
-                    !form.clientId.trim() ||
-                    !form.workspaceName.trim()
+                    !form.clientId.trim()
                   }
                   className="bg-amber hover:bg-amber-light text-charcoal"
                 >
