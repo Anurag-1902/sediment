@@ -18,14 +18,11 @@ import {
   LayoutDashboard,
   MessageSquareText,
   KanbanSquare,
-  Sparkles,
   Settings,
   Clock,
   Users,
   AlertTriangle,
   ArrowLeft,
-  Send,
-  Loader2,
   BarChart3,
   MessageSquare,
 } from "lucide-react";
@@ -91,7 +88,7 @@ export default function ProjectDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-grid">
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden md:inline">Overview</span>
@@ -103,10 +100,6 @@ export default function ProjectDetailPage() {
           <TabsTrigger value="tasks" className="gap-2">
             <KanbanSquare className="h-4 w-4" />
             <span className="hidden md:inline">Tasks</span>
-          </TabsTrigger>
-          <TabsTrigger value="ask-ai" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden md:inline">Ask AI</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -128,10 +121,6 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="tasks">
           <ProjectTasks projectId={projectId} />
-        </TabsContent>
-
-        <TabsContent value="ask-ai">
-          <AskAI projectId={projectId} projectName={project.name} />
         </TabsContent>
 
         <TabsContent value="analytics">
@@ -582,83 +571,6 @@ function ProjectTasks({ projectId }: { projectId: string }) {
           </div>
         </div>
       ))}
-    </div>
-  );
-}
-
-function AskAI({ projectId, projectName }: { projectId: string; projectName: string }) {
-  const [question, setQuestion] = useState("");
-  const { data: history } = trpc.ai.history.useQuery({ projectId });
-  const askMutation = trpc.ai.ask.useMutation({
-    onSuccess: () => {
-      setQuestion("");
-    },
-  });
-
-  const handleAsk = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!question.trim()) return;
-    askMutation.mutate({ projectId, question });
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Ask Sediment AI</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAsk} className="flex gap-3">
-            <Input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={`Ask about ${projectName}...`}
-              disabled={askMutation.isPending}
-            />
-            <Button
-              type="submit"
-              disabled={askMutation.isPending || !question.trim()}
-              className="bg-amber hover:bg-amber-light text-charcoal"
-            >
-              {askMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </form>
-          {askMutation.data && (
-            <div className="mt-4 rounded-lg bg-surface-raised p-4 text-sm whitespace-pre-wrap">
-              {askMutation.data.answer}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {history && history.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-semibold text-sm">Recent Questions</h3>
-          {history.map((q: {
-            id: string;
-            question: string;
-            answer: string;
-            createdAt: Date;
-            user: { name: string | null };
-          }) => (
-            <Card key={q.id}>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{q.question}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(q.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{q.answer}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
