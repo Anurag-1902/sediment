@@ -65,7 +65,8 @@ export async function GET() {
       const slackResult = await postSyncMessage(
         project.slackChannelId,
         project.name,
-        project.ownerId
+        project.ownerId,
+        project.standupPrompt
       );
 
       await prisma.syncSession.update({

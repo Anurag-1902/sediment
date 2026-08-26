@@ -56,6 +56,7 @@ export default function NewProjectPage() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [handles, setHandles] = useState<string[]>([]);
   const [customChannel, setCustomChannel] = useState(false);
+  const [standupPrompt, setStandupPrompt] = useState("");
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
   const createProject = trpc.project.create.useMutation({
@@ -83,6 +84,7 @@ export default function NewProjectPage() {
       syncTime,
       syncTimezone: timezone,
       memberHandles: handles,
+      standupPrompt: standupPrompt.trim() || undefined,
     });
   };
 
@@ -230,6 +232,46 @@ export default function NewProjectPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="standupPrompt">Standup Prompt</Label>
+                <div className="space-y-2 mb-2">
+                  <Label className="text-xs text-text-muted">Quick presets:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "Classic", value: "What did you do yesterday? What's on today? Any blockers?" },
+                      { label: "Ship-focused", value: "What did you ship yesterday? What are you shipping today? What's blocking you?" },
+                      { label: "Weekly focus", value: "What's your focus this week? What did you complete? Any risks or dependencies?" },
+                      { label: "Async detailed", value: "1. What did you accomplish yesterday? 2. What are you working on today? 3. Any blockers or help needed? 4. Any wins to share?" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setStandupPrompt(preset.value)}
+                        className="text-xs px-3 py-1 rounded-full border border-border-custom bg-surface hover:bg-surface-raised text-text-muted hover:text-text transition-colors"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-text-muted">
+                  The question your team sees in the daily Slack message. Keep it under 500 characters.
+                </p>
+                <textarea
+                  id="standupPrompt"
+                  value={standupPrompt}
+                  onChange={(e) => setStandupPrompt(e.target.value)}
+                  placeholder="What did you do yesterday? What's on today? Any blockers?"
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-lg border border-border-custom bg-charcoal px-3 py-2 text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-amber/50 resize-none"
+                />
+                <div className="flex justify-between text-xs text-text-muted">
+                  <span>Leave blank to use the default</span>
+                  <span>{standupPrompt.length}/500</span>
                 </div>
               </div>
 

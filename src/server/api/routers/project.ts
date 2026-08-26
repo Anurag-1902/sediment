@@ -83,6 +83,7 @@ export const projectRouter = createTRPCRouter({
         syncTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
         syncTimezone: z.string().min(1),
         memberHandles: z.array(z.string()).default([]),
+        standupPrompt: z.string().min(10).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -133,6 +134,7 @@ export const projectRouter = createTRPCRouter({
         syncTimezone: z.string().min(1).optional(),
         isActive: z.boolean().optional(),
         memberHandles: z.array(z.string()).optional(),
+        standupPrompt: z.string().min(10).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

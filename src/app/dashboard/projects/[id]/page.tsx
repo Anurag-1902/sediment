@@ -380,7 +380,7 @@ function ProjectOverview({
         lastSync: { createdAt: Date; updates: Array<{ id: string }> } | null;
       }
     | undefined;
-  project: { syncTime: string; syncTimezone: string; slackChannelName: string };
+  project: { syncTime: string; syncTimezone: string; slackChannelName: string; standupPrompt: string };
   projectId: string;
 }) {
   const { data: updates } = trpc.update.listByProject.useQuery({ projectId });
@@ -444,6 +444,23 @@ function ProjectOverview({
           ) : (
             <div className="text-muted-foreground">No syncs yet.</div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-xl border-border-custom bg-surface">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-medium text-text-muted flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Current Standup Prompt
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-text italic leading-relaxed">
+            &ldquo;{project.standupPrompt}&rdquo;
+          </p>
+          <p className="text-xs text-text-muted mt-2">
+            Edit in Settings tab
+          </p>
         </CardContent>
       </Card>
 
@@ -675,6 +692,7 @@ function ProjectSettings({ project }: { project: any }) {
   const [memberHandles, setMemberHandles] = useState<string[]>(
     project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
   );
+  const [standupPrompt, setStandupPrompt] = useState(project.standupPrompt ?? "");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
@@ -713,6 +731,7 @@ function ProjectSettings({ project }: { project: any }) {
       syncTimezone: timezone,
       isActive,
       memberHandles,
+      standupPrompt: standupPrompt.trim() || undefined,
     });
   };
 
@@ -868,6 +887,24 @@ function ProjectSettings({ project }: { project: any }) {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+              <div className="space-y-2 mb-6">
+                <Label htmlFor="editStandupPrompt">Standup Prompt</Label>
+                <p className="text-xs text-text-muted">
+                  The daily question sent to your Slack channel. Changes apply from the next scheduled sync.
+                </p>
+                <textarea
+                  id="editStandupPrompt"
+                  value={standupPrompt}
+                  onChange={(e) => setStandupPrompt(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-lg border border-border-custom bg-charcoal px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-amber/50 resize-none"
+                />
+                <div className="flex justify-between text-xs text-text-muted">
+                  <span>Between 10 and 500 characters</span>
+                  <span>{standupPrompt.length}/500</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">

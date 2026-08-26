@@ -103,10 +103,11 @@ export function verifySlackRequest(
 export async function postSyncMessage(
   channel: string,
   projectName: string,
-  userId: string
+  userId: string,
+  standupPrompt: string
 ) {
   const client = await getSlackClientForUser(userId);
-  const text = `Daily Sync for *${projectName}* — Please reply in thread with your update.\n\nWhat did you do yesterday? What's on today? Any blockers?`;
+  const text = `Daily Sync for *${projectName}* — Please reply in thread with your update.\n\n${standupPrompt}`;
   const result = await client.chat.postMessage({
     channel,
     text,
