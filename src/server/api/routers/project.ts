@@ -317,6 +317,8 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
 
+      const totalUsers = await prisma.user.count();
+
       // Task status breakdown
       const statusCounts = {
         OPEN: 0,
@@ -411,6 +413,7 @@ export const projectRouter = createTRPCRouter({
         avgDaysToClose,
         totalTasks: project.tasks.length,
         blockerCount: statusCounts.BLOCKED,
+        totalUsers,
       };
     }),
 });

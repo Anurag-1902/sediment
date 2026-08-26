@@ -127,7 +127,7 @@ export default function ProjectDetailPage() {
           {analytics ? (
             <div className="space-y-6">
               {/* Top-level stats */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <Card className="rounded-xl border-border-custom bg-surface">
                   <CardContent className="pt-6">
                     <p className="text-xs text-text-muted mb-1">Total Tasks</p>
@@ -152,6 +152,12 @@ export default function ProjectDetailPage() {
                     <p className="text-2xl font-bold text-text">
                       {analytics.avgDaysToClose !== null ? `${analytics.avgDaysToClose}d` : "—"}
                     </p>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-xl border-border-custom bg-surface">
+                  <CardContent className="pt-6">
+                    <p className="text-xs text-text-muted mb-1">Signed Up Users</p>
+                    <p className="text-2xl font-bold text-text">{analytics.totalUsers}</p>
                   </CardContent>
                 </Card>
               </div>
