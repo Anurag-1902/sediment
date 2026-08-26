@@ -9,6 +9,7 @@ export const projectRouter = createTRPCRouter({
     const userId = ctx.session.user.id;
     return prisma.project.findMany({
       where: {
+        isActive: true,
         OR: [
           { ownerId: userId },
           { members: { some: { userId } } },
@@ -18,6 +19,21 @@ export const projectRouter = createTRPCRouter({
         _count: { select: { tasks: true, members: true } },
         tasks: { where: { status: { not: "CLOSED" } }, select: { id: true } },
         syncSessions: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
+
+  listArchived: protectedProcedure.query(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
+    const userId = ctx.session.user.id;
+    return prisma.project.findMany({
+      where: {
+        isActive: false,
+        ownerId: userId,
+      },
+      include: {
+        _count: { select: { tasks: true, members: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -168,6 +184,42 @@ export const projectRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+      const existing = await prisma.project.findFirst({
+        where: { id: input.id, ownerId: userId },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+      await prisma.project.update({
+        where: { id: input.id },
+        data: { isActive: false },
+      });
+      return { ok: true };
+    }),
+
+  restore: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+      const existing = await prisma.project.findFirst({
+        where: { id: input.id, ownerId: userId },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+      await prisma.project.update({
+        where: { id: input.id },
+        data: { isActive: true },
+      });
+      return { ok: true };
+    }),
+
+  permanentDelete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();

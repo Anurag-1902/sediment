@@ -31,6 +31,8 @@ import {
   ArrowRight,
   MoreVertical,
   Trash2,
+  Archive,
+  RotateCcw,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 
@@ -49,6 +51,25 @@ export default function DashboardPage() {
   });
 
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  const { data: archivedProjects } = trpc.project.listArchived.useQuery();
+
+  const restoreProject = trpc.project.restore.useMutation({
+    onSuccess: () => {
+      toast.success("Project restored");
+      utils.project.list.invalidate();
+      utils.project.listArchived.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const permanentDeleteProject = trpc.project.permanentDelete.useMutation({
+    onSuccess: () => {
+      toast.success("Project permanently deleted");
+      utils.project.listArchived.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   useEffect(() => {
     const handleClickOutside = () => setMenuOpenId(null);
@@ -290,6 +311,54 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
+
+              {archivedProjects && archivedProjects.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
+                    <Archive className="h-4 w-4 text-text-muted" />
+                    Project History
+                  </h2>
+                  <div className="space-y-3">
+                    {archivedProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="flex items-center justify-between rounded-xl border border-border-custom bg-surface/50 px-5 py-4"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-text-muted">
+                            {project.name}
+                          </p>
+                          <p className="text-xs text-text-muted/60 mt-0.5">
+                            {project._count.tasks} tasks · {project._count.members} members
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => restoreProject.mutate({ id: project.id })}
+                            disabled={restoreProject.isPending}
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-amber hover:bg-amber/10 transition-colors"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Restore
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Permanently delete "${project.name}"? This cannot be undone.`)) {
+                                permanentDeleteProject.mutate({ id: project.id });
+                              }
+                            }}
+                            disabled={permanentDeleteProject.isPending}
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete Forever
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
