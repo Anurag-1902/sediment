@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { User, LogOut, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CronPoller } from "@/components/dashboard/cron-poller";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +19,8 @@ import {
 export function Navbar() {
   const { session, isLoading, signOut } = useAuth();
   const user = session?.user;
+  const pathname = usePathname();
+  const isDashboard = pathname?.startsWith("/dashboard");
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border-custom bg-charcoal/80 backdrop-blur-xl">
@@ -38,6 +42,11 @@ export function Navbar() {
             <div className="h-8 w-8 animate-pulse rounded-full bg-surface-raised" />
           ) : session ? (
             <>
+              {isDashboard && (
+                <div className="hidden md:flex items-center border border-border-custom rounded-full px-3 py-1 bg-surface/80 backdrop-blur">
+                  <CronPoller />
+                </div>
+              )}
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="text-text-muted hover:text-text">
                   Dashboard
