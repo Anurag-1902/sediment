@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 import { type inferRouterOutputs } from "@trpc/server";
@@ -27,13 +29,34 @@ import {
   Clock,
   Activity,
   ArrowRight,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 
 export default function DashboardPage() {
   const { session } = useAuth();
   const { data: projects, isLoading } = trpc.project.list.useQuery();
+  const utils = trpc.useUtils();
   const user = session?.user;
+
+  const deleteProject = trpc.project.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Project deleted");
+      utils.project.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = () => setMenuOpenId(null);
+    if (menuOpenId) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [menuOpenId]);
 
   const totalProjects = projects?.length ?? 0;
   const totalOpenTasks =
@@ -177,57 +200,93 @@ export default function DashboardPage() {
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {projects.map((project: ProjectListItem) => (
-                    <Link
-                      key={project.id}
-                      href={`/dashboard/projects/${project.id}`}
-                      className="group"
-                    >
-                      <Card className="h-full rounded-xl border-border-custom bg-surface transition-all hover:border-amber/30">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start justify-between gap-3">
-                            <CardTitle className="text-base font-semibold text-text">
-                              {project.name}
-                            </CardTitle>
-                            {project.isActive ? (
-                              <Badge className="bg-emerald-500/10 text-emerald-400 border-0">
-                                Active
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-stone-500/10 text-stone-400 border-0">
-                                Paused
-                              </Badge>
-                            )}
+                    <div key={project.id} className="group relative">
+                      <Link
+                        href={`/dashboard/projects/${project.id}`}
+                        className="block"
+                      >
+                        <Card className="h-full rounded-xl border-border-custom bg-surface transition-all hover:border-amber/30">
+                          <CardHeader className="pb-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <CardTitle className="text-base font-semibold text-text">
+                                {project.name}
+                              </CardTitle>
+                              <div className="flex items-center gap-2">
+                                {project.isActive ? (
+                                  <Badge className="bg-emerald-500/10 text-emerald-400 border-0">
+                                    Active
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-stone-500/10 text-stone-400 border-0">
+                                    Paused
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <p className="text-sm text-text-muted line-clamp-2">
+                              {project.description || "No description"}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs text-text-muted">
+                              <span className="flex items-center gap-1">
+                                <ListTodo className="h-3.5 w-3.5" />
+                                {project._count.tasks} tasks
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3.5 w-3.5" />
+                                {project._count.members} members
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-text-muted">
+                              <Clock className="h-3.5 w-3.5" />
+                              {project.syncSessions[0]
+                                ? `Last sync ${new Date(
+                                    project.syncSessions[0].createdAt
+                                  ).toLocaleDateString()}`
+                                : "No syncs yet"}
+                            </div>
+                            <div className="flex items-center text-xs font-medium text-amber group-hover:text-amber-light">
+                              View details
+                              <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      {/* Three-dot menu — sits outside the Link so clicks don't navigate */}
+                      <div className="absolute top-4 right-4 z-10">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setMenuOpenId(menuOpenId === project.id ? null : project.id);
+                          }}
+                          className="rounded-lg p-1.5 text-text-muted hover:bg-surface-raised hover:text-text transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+
+                        {menuOpenId === project.id && (
+                          <div className="absolute right-0 mt-1 w-40 rounded-lg border border-border-custom bg-surface-raised shadow-lg py-1">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (confirm(`Delete "${project.name}"? This removes all updates, tasks, and history.`)) {
+                                  deleteProject.mutate({ id: project.id });
+                                }
+                                setMenuOpenId(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete Project
+                            </button>
                           </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <p className="text-sm text-text-muted line-clamp-2">
-                            {project.description || "No description"}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-text-muted">
-                            <span className="flex items-center gap-1">
-                              <ListTodo className="h-3.5 w-3.5" />
-                              {project._count.tasks} tasks
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3.5 w-3.5" />
-                              {project._count.members} members
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-text-muted">
-                            <Clock className="h-3.5 w-3.5" />
-                            {project.syncSessions[0]
-                              ? `Last sync ${new Date(
-                                  project.syncSessions[0].createdAt
-                                ).toLocaleDateString()}`
-                              : "No syncs yet"}
-                          </div>
-                          <div className="flex items-center text-xs font-medium text-amber group-hover:text-amber-light">
-                            View details
-                            <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
