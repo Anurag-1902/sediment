@@ -227,22 +227,20 @@ export default function DashboardPage() {
                         className="block"
                       >
                         <Card className="h-full rounded-xl border-border-custom bg-surface transition-all hover:border-amber/30">
-                          <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between gap-3">
+                          <CardHeader className="pb-2 pr-10">
+                            <div className="flex items-center gap-2">
                               <CardTitle className="text-base font-semibold text-text">
                                 {project.name}
                               </CardTitle>
-                              <div className="flex items-center gap-2">
-                                {project.isActive ? (
-                                  <Badge className="bg-emerald-500/10 text-emerald-400 border-0">
-                                    Active
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-stone-500/10 text-stone-400 border-0">
-                                    Paused
-                                  </Badge>
-                                )}
-                              </div>
+                              {project.isActive ? (
+                                <Badge className="bg-emerald-500/10 text-emerald-400 border-0 text-[10px] px-1.5 py-0">
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-stone-500/10 text-stone-400 border-0 text-[10px] px-1.5 py-0">
+                                  Paused
+                                </Badge>
+                              )}
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-3">

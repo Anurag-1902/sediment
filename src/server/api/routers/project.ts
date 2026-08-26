@@ -272,4 +272,145 @@ export const projectRouter = createTRPCRouter({
         lastSync: project.syncSessions[0] ?? null,
       };
     }),
+
+  analytics: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+      const project = await prisma.project.findFirst({
+        where: {
+          id: input.id,
+          OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+        },
+        include: {
+          tasks: {
+            select: {
+              id: true,
+              status: true,
+              assigneeName: true,
+              createdAt: true,
+              lastMentionedAt: true,
+            },
+          },
+          members: {
+            select: {
+              slackUserId: true,
+              slackHandle: true,
+            },
+          },
+          syncSessions: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              updates: {
+                select: {
+                  slackUserId: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!project) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      // Task status breakdown
+      const statusCounts = {
+        OPEN: 0,
+        IN_PROGRESS: 0,
+        BLOCKED: 0,
+        CLOSED: 0,
+      };
+      for (const task of project.tasks) {
+        const s = task.status as keyof typeof statusCounts;
+        if (s in statusCounts) statusCounts[s]++;
+      }
+
+      // Per-member task counts
+      const memberTaskMap: Record<string, { name: string; open: number; inProgress: number; blocked: number; closed: number }> = {};
+      for (const member of project.members) {
+        memberTaskMap[member.slackUserId] = {
+          name: member.slackHandle ?? member.slackUserId,
+          open: 0,
+          inProgress: 0,
+          blocked: 0,
+          closed: 0,
+        };
+      }
+      for (const task of project.tasks) {
+        const key = task.assigneeName;
+        if (key) {
+          // Find by name match
+          const entry = Object.values(memberTaskMap).find((m) => m.name === key);
+          if (entry) {
+            if (task.status === "OPEN") entry.open++;
+            else if (task.status === "IN_PROGRESS") entry.inProgress++;
+            else if (task.status === "BLOCKED") entry.blocked++;
+            else if (task.status === "CLOSED") entry.closed++;
+          }
+        }
+      }
+
+      // Weekly task creation trend (last 8 weeks)
+      const weeklyTrend: Array<{ week: string; created: number; closed: number }> = [];
+      const now = new Date();
+      for (let i = 7; i >= 0; i--) {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - i * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+        const label = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
+        const created = project.tasks.filter(
+          (t) => new Date(t.createdAt) >= weekStart && new Date(t.createdAt) < weekEnd
+        ).length;
+        const closed = project.tasks.filter(
+          (t) =>
+            t.status === "CLOSED" &&
+            t.lastMentionedAt &&
+            new Date(t.lastMentionedAt) >= weekStart &&
+            new Date(t.lastMentionedAt) < weekEnd
+        ).length;
+        weeklyTrend.push({ week: label, created, closed });
+      }
+
+      // Response rate per sync
+      const totalSyncs = project.syncSessions.length;
+      const totalMembers = project.members.length;
+      let totalResponses = 0;
+      for (const session of project.syncSessions) {
+        const uniqueResponders = new Set(session.updates.map((u) => u.slackUserId));
+        totalResponses += uniqueResponders.size;
+      }
+      const avgResponseRate =
+        totalSyncs > 0 && totalMembers > 0
+          ? Math.round((totalResponses / (totalSyncs * totalMembers)) * 100)
+          : 0;
+
+      // Avg time to close (in days) for closed tasks
+      const closedTasks = project.tasks.filter((t) => t.status === "CLOSED" && t.lastMentionedAt);
+      const avgDaysToClose =
+        closedTasks.length > 0
+          ? Math.round(
+              closedTasks.reduce((sum, t) => {
+                const created = new Date(t.createdAt).getTime();
+                const closed = new Date(t.lastMentionedAt!).getTime();
+                return sum + (closed - created) / (1000 * 60 * 60 * 24);
+              }, 0) / closedTasks.length
+            )
+          : null;
+
+      return {
+        statusCounts,
+        memberBreakdown: Object.values(memberTaskMap),
+        weeklyTrend,
+        totalSyncs,
+        avgResponseRate,
+        avgDaysToClose,
+        totalTasks: project.tasks.length,
+        blockerCount: statusCounts.BLOCKED,
+      };
+    }),
 });
