@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { session, isLoading, signOut } = useAuth();
@@ -44,7 +43,6 @@ export function Navbar() {
                   Dashboard
                 </Button>
               </Link>
-              <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
@@ -79,7 +77,6 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <ThemeToggle />
               <Link href="/sign-in">
                 <Button variant="ghost" size="sm" className="text-text-muted hover:text-text">
                   Sign In
