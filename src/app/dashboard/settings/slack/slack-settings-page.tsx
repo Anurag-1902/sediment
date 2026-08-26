@@ -484,7 +484,7 @@ export function SlackSettingsPage({
                   onChange={(e) =>
                     setForm((f) => ({ ...f, clientId: e.target.value }))
                   }
-                  placeholder="11792487095461.xxx"
+                  placeholder="Enter your Client ID"
                 />
               </div>
 
@@ -524,13 +524,38 @@ export function SlackSettingsPage({
                 onToggle={() =>
                   setShowSecret((s) => ({ ...s, botToken: !s.botToken }))
                 }
-                placeholder={isConnected ? "••••••••  (saved, enter new to replace)" : "xoxb-..."}
+                placeholder={isConnected ? "••••••••  (saved, enter new to replace)" : "Enter your Bot Token (starts with xoxb-)"}
               />
 
               <div className="flex items-center gap-2 pt-2">
                 <Button
-                  onClick={() => saveMutation.mutate(form)}
-                  disabled={saveMutation.isPending}
+                  onClick={() => {
+                    if (!form.clientId.trim()) {
+                      toast.error("Client ID is required");
+                      return;
+                    }
+                    if (!form.workspaceName.trim()) {
+                      toast.error("Workspace name is required");
+                      return;
+                    }
+                    if (
+                      !workspace &&
+                      (!form.clientSecret ||
+                        !form.signingSecret ||
+                        !form.botToken)
+                    ) {
+                      toast.error(
+                        "All credentials are required for initial setup"
+                      );
+                      return;
+                    }
+                    saveMutation.mutate(form);
+                  }}
+                  disabled={
+                    saveMutation.isPending ||
+                    !form.clientId.trim() ||
+                    !form.workspaceName.trim()
+                  }
                   className="bg-amber hover:bg-amber-light text-charcoal"
                 >
                   {saveMutation.isPending ? (
