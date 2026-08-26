@@ -15,14 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-} from "@/components/ui/empty";
-import {
   Plus,
+  FolderPlus,
   FolderOpen,
   ListTodo,
   Users,
@@ -139,23 +133,23 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : !projects || projects.length === 0 ? (
-            <Empty className="min-h-[60vh]">
-              <EmptyHeader>
-                <EmptyTitle>No projects yet</EmptyTitle>
-                <EmptyDescription>
-                  Create your first project to start tracking team updates and
-                  tasks.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Link href="/dashboard/projects/new">
-                  <Button className="bg-amber hover:bg-amber-light text-charcoal font-medium">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Project
-                  </Button>
-                </Link>
-              </EmptyContent>
-            </Empty>
+            <div className="rounded-xl border border-dashed border-border-custom bg-surface/50 py-16 px-6 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber/10">
+                <FolderPlus className="h-6 w-6 text-amber" />
+              </div>
+              <h3 className="text-lg font-semibold text-text mb-2">
+                No projects yet
+              </h3>
+              <p className="text-sm text-text-muted max-w-sm mx-auto mb-6">
+                Create your first project to start running async standups in Slack. Setup takes about 2 minutes.
+              </p>
+              <Link href="/dashboard/projects/new">
+                <Button className="bg-amber text-charcoal hover:bg-amber-light font-semibold">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Project
+                </Button>
+              </Link>
+            </div>
           ) : (
             <>
               {/* Stats */}

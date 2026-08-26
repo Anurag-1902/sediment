@@ -25,6 +25,8 @@ import {
   ArrowLeft,
   BarChart3,
   MessageSquare,
+  MessageCircle,
+  ListTodo,
 } from "lucide-react";
 import { TeamMembersSelector } from "@/components/dashboard/team-members-selector";
 
@@ -112,7 +114,7 @@ export default function ProjectDetailPage() {
         </TabsList>
 
         <TabsContent value="overview">
-          <ProjectOverview stats={stats} project={project} />
+          <ProjectOverview stats={stats} project={project} projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="updates">
@@ -125,6 +127,19 @@ export default function ProjectDetailPage() {
 
         <TabsContent value="analytics">
           {analytics ? (
+            analytics.totalTasks === 0 ? (
+              <div className="rounded-xl border border-dashed border-border-custom bg-surface/50 py-16 px-6 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber/10">
+                  <BarChart3 className="h-6 w-6 text-amber" />
+                </div>
+                <h3 className="text-lg font-semibold text-text mb-2">
+                  No analytics yet
+                </h3>
+                <p className="text-sm text-text-muted max-w-md mx-auto">
+                  Analytics populate as standup responses come in. Once your team starts replying to standup prompts in Slack, you&apos;ll see velocity trends, blocker patterns, and per-member workload here.
+                </p>
+              </div>
+            ) : (
             <div className="space-y-6">
               {/* Top-level stats */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -332,6 +347,7 @@ export default function ProjectDetailPage() {
                 </CardContent>
               </Card>
             </div>
+            )
           ) : (
             <Card className="rounded-xl border-border-custom bg-surface">
               <CardContent className="py-12 text-center">
@@ -352,6 +368,7 @@ export default function ProjectDetailPage() {
 function ProjectOverview({
   stats,
   project,
+  projectId,
 }: {
   stats:
     | {
@@ -364,7 +381,10 @@ function ProjectOverview({
       }
     | undefined;
   project: { syncTime: string; syncTimezone: string; slackChannelName: string };
+  projectId: string;
 }) {
+  const { data: updates } = trpc.update.listByProject.useQuery({ projectId });
+  const recentUpdates = updates ?? [];
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
@@ -426,6 +446,41 @@ function ProjectOverview({
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Updates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentUpdates.length === 0 ? (
+            <p className="text-sm text-text-muted italic py-4 text-center">
+              No standup responses yet. They&apos;ll appear here as your team replies in Slack.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentUpdates.slice(0, 5).map((u: {
+                id: string;
+                rawText: string;
+                aiSummary: string | null;
+                createdAt: Date;
+                memberName: string | null;
+              }) => (
+                <div key={u.id} className="rounded-lg border border-border-custom bg-surface-raised/50 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-text">
+                      {u.memberName || "Team member"}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      {new Date(u.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-text-muted line-clamp-2">{u.rawText}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -445,12 +500,20 @@ function ProjectUpdates({ projectId }: { projectId: string }) {
 
   if (!updates || updates.length === 0) {
     return (
-      <Empty className="min-h-[300px]">
-        <EmptyHeader>
-          <EmptyTitle>No updates yet</EmptyTitle>
-          <EmptyDescription>Updates will appear here once developers reply to sync threads in Slack.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <div className="rounded-xl border border-dashed border-border-custom bg-surface/50 py-16 px-6 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber/10">
+          <MessageCircle className="h-6 w-6 text-amber" />
+        </div>
+        <h3 className="text-lg font-semibold text-text mb-2">
+          No standup responses yet
+        </h3>
+        <p className="text-sm text-text-muted max-w-md mx-auto mb-4">
+          Standup prompts are sent to your Slack channel at the scheduled sync time. Once team members reply in the thread, their updates will appear here.
+        </p>
+        <p className="text-xs text-text-muted/70">
+          Make sure the bot is invited to the channel with <code className="text-amber bg-surface-raised px-1.5 py-0.5 rounded">/invite @Sediment</code>
+        </p>
+      </div>
     );
   }
 
@@ -518,6 +581,22 @@ function ProjectTasks({ projectId }: { projectId: string }) {
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-64" />
         ))}
+      </div>
+    );
+  }
+
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border-custom bg-surface/50 py-16 px-6 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber/10">
+          <ListTodo className="h-6 w-6 text-amber" />
+        </div>
+        <h3 className="text-lg font-semibold text-text mb-2">
+          No tasks tracked yet
+        </h3>
+        <p className="text-sm text-text-muted max-w-md mx-auto">
+          Tasks are automatically extracted from Slack standup responses. When someone posts an update like &quot;working on the auth flow&quot; or tags a teammate for a task, it&apos;ll show up here.
+        </p>
       </div>
     );
   }
