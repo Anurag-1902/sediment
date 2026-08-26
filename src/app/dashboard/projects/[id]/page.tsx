@@ -693,7 +693,6 @@ function ProjectSettings({ project }: { project: any }) {
     project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
   );
   const [standupPrompt, setStandupPrompt] = useState(project.standupPrompt ?? "");
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const { data: channels, error: channelsError } = trpc.slack.channels.useQuery();
 
@@ -705,15 +704,6 @@ function ProjectSettings({ project }: { project: any }) {
       toast.success("Project updated");
       utils.project.get.invalidate({ id: project.id });
       utils.project.list.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const deleteProject = trpc.project.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Project deleted");
-      utils.project.list.invalidate();
-      router.push("/dashboard");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -968,37 +958,6 @@ function ProjectSettings({ project }: { project: any }) {
         </Card>
       )}
 
-      <Card className="border-rose-500/20">
-        <CardHeader>
-          <CardTitle className="text-rose-400">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Deleting a project will permanently remove all associated updates, tasks, and history. This cannot be undone.
-          </p>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-text-muted block mb-1">
-                Type <span className="text-text font-semibold">{project.name}</span> to confirm
-              </label>
-              <input
-                type="text"
-                className="w-full rounded-lg border border-border-custom bg-charcoal px-3 py-2 text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                placeholder={project.name}
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-              />
-            </div>
-            <Button
-              variant="destructive"
-              onClick={() => deleteProject.mutate({ id: project.id })}
-              disabled={deleteProject.isPending || deleteConfirmText !== project.name}
-            >
-              {deleteProject.isPending ? "Deleting..." : "Permanently Delete Project"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
