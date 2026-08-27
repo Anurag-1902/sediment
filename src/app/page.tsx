@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { AnimatedIcon } from "@/components/animated-icon";
+import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import {
   Layers,
   Slack,
@@ -511,6 +512,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      <UpgradePrompt />
     </div>
   );
 }

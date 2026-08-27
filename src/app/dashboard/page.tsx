@@ -35,6 +35,10 @@ export default function DashboardPage() {
   const { data: projects, isLoading } = trpc.project.list.useQuery();
   const utils = trpc.useUtils();
   const user = session?.user;
+  const { data: planData } = trpc.billing.currentPlan.useQuery(undefined, {
+    retry: false,
+  });
+  const activePlan = planData?.isActive ? planData.plan : null;
 
   const deleteProject = trpc.project.delete.useMutation({
     onSuccess: () => {
@@ -116,7 +120,13 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-text">
                   {user?.name ?? "User"}
                 </p>
-                <p className="text-xs text-text-muted">Business</p>
+                {activePlan ? (
+                  <p className={`text-xs font-semibold ${activePlan === "BUSINESS" ? "text-amber" : "text-amber/80"}`}>
+                    {activePlan === "BUSINESS" ? "Business" : "Pro"}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-muted">Free</p>
+                )}
               </div>
             </div>
           </div>

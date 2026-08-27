@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { User, LogOut, Layers } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { AnimatedIcon } from "@/components/animated-icon";
+import { User, LogOut, Layers, Crown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CronPoller } from "@/components/dashboard/cron-poller";
 import {
@@ -21,6 +23,10 @@ export function Navbar() {
   const user = session?.user;
   const pathname = usePathname();
   const isDashboard = pathname?.startsWith("/dashboard");
+  const { data: planData } = trpc.billing.currentPlan.useQuery(undefined, {
+    retry: false,
+  });
+  const activePlan = planData?.isActive ? planData.plan : null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border-custom bg-charcoal/80 backdrop-blur-xl">
@@ -30,6 +36,21 @@ export function Navbar() {
             <Layers className="h-4 w-4 text-charcoal" />
           </div>
           <span className="text-lg font-semibold text-text">Sediment</span>
+          {activePlan && (
+            <span
+              className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                activePlan === "BUSINESS"
+                  ? "bg-gradient-to-r from-amber to-amber-dark text-charcoal"
+                  : "bg-amber/15 text-amber border border-amber/30"
+              }`}
+            >
+              <AnimatedIcon
+                icon={activePlan === "BUSINESS" ? Crown : Sparkles}
+                className="h-3 w-3"
+              />
+              {activePlan === "BUSINESS" ? "Business" : "Pro"}
+            </span>
+          )}
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
