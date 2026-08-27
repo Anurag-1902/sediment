@@ -7,28 +7,37 @@ export const billingRouter = createTRPCRouter({
   createSubscription: protectedProcedure
     .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
-      const planId = await getOrCreateRazorpayPlan(input.plan);
-      const config = PLAN_CONFIG[input.plan];
+      try {
+        const planId = await getOrCreateRazorpayPlan(input.plan);
+        const config = PLAN_CONFIG[input.plan];
 
-      const subscription = await razorpay.subscriptions.create({
-        plan_id: planId,
-        total_count: 12, // max 12 billing cycles (1 year)
-        customer_notify: 1,
-        notes: {
-          userId: ctx.session.user.id,
+        const subscription = await razorpay.subscriptions.create({
+          plan_id: planId,
+          total_count: input.plan === "STARTER" ? 4 : 12,
+          customer_notify: 1,
+          notes: {
+            userId: ctx.session.user.id,
+            plan: input.plan,
+          },
+        } as any);
+
+        return {
+          subscriptionId: subscription.id,
+          planId,
+          amount: config.amount,
+          currency: config.currency,
+          keyId: process.env.RAZORPAY_KEY_ID!,
           plan: input.plan,
-        },
-      } as any);
-
-      return {
-        subscriptionId: subscription.id,
-        planId,
-        amount: config.amount,
-        currency: config.currency,
-        keyId: process.env.RAZORPAY_KEY_ID!,
-        plan: input.plan,
-        description: config.description,
-      };
+          description: config.description,
+        };
+      } catch (err: any) {
+        console.error("Razorpay subscription creation failed:", err?.error || err);
+        const message =
+          err?.error?.description ||
+          err?.message ||
+          "Failed to create subscription. Please try again.";
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      }
     }),
 
   verifySubscription: protectedProcedure

@@ -11,10 +11,10 @@ export const razorpay = new Razorpay({
 
 export const PLAN_CONFIG = {
   STARTER: {
-    name: "Sediment Starter",
-    amount: 100, // ₹1 in paise
+    name: "Sediment Starter Test",
+    amount: 100, // ₹1
     currency: "INR",
-    period: "daily" as const,
+    period: "weekly" as const,
     interval: 1,
     description: "Sediment Starter — 24-hour access to test all features",
     features: [
