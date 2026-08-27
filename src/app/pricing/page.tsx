@@ -1,7 +1,5 @@
 "use client";
 
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import { Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useRouter } from "next/navigation";
@@ -133,7 +131,6 @@ export default function PricingPage() {
 
   return (
     <>
-      <Navbar />
       <main className="min-h-screen bg-charcoal pt-24 pb-16 px-4">
         <div className="mx-auto max-w-4xl text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-text mb-4">
@@ -278,7 +275,6 @@ export default function PricingPage() {
           ))}
         </div>
       </main>
-      <Footer />
     </>
   );
 }
