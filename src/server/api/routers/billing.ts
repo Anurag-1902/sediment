@@ -54,7 +54,8 @@ export const billingRouter = createTRPCRouter({
         });
       }
 
-      const expiresAt = new Date();
+      const now = new Date();
+      const expiresAt = new Date(now);
       expiresAt.setMonth(expiresAt.getMonth() + 1);
 
       await prisma.user.update({
@@ -62,7 +63,9 @@ export const billingRouter = createTRPCRouter({
         data: {
           plan: input.plan,
           razorpaySubscriptionId: input.razorpayPaymentId,
+          planStartedAt: now,
           planExpiresAt: expiresAt,
+          autoRenew: true,
         },
       });
 
@@ -73,14 +76,32 @@ export const billingRouter = createTRPCRouter({
     const prisma = await ctx.getPrisma();
     const user = await prisma.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { plan: true, planExpiresAt: true },
+      select: {
+        plan: true,
+        planStartedAt: true,
+        planExpiresAt: true,
+        autoRenew: true,
+      },
     });
     return {
       plan: user?.plan || "FREE",
+      startedAt: user?.planStartedAt,
       expiresAt: user?.planExpiresAt,
+      autoRenew: user?.autoRenew ?? false,
       isActive: user?.plan !== "FREE" && user?.planExpiresAt
         ? new Date(user.planExpiresAt) > new Date()
         : false,
     };
   }),
+
+  toggleAutoRenew: protectedProcedure
+    .input(z.object({ autoRenew: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      await prisma.user.update({
+        where: { id: ctx.session.user.id },
+        data: { autoRenew: input.autoRenew },
+      });
+      return { ok: true, autoRenew: input.autoRenew };
+    }),
 });

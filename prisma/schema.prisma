@@ -32,7 +32,9 @@ model User {
   plan                    String    @default("FREE") @map("plan")
   razorpayCustomerId      String?   @map("razorpay_customer_id")
   razorpaySubscriptionId  String?   @map("razorpay_subscription_id")
+  planStartedAt           DateTime? @map("plan_started_at")
   planExpiresAt           DateTime? @map("plan_expires_at")
+  autoRenew               Boolean   @default(true) @map("auto_renew")
 
   @@unique([email])
   @@map("user")
