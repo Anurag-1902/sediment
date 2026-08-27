@@ -60,7 +60,8 @@ export default function PricingPage() {
     onError: (err) => toast.error(err.message),
   });
   const verifyPayment = trpc.billing.verifyPayment.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await utils.billing.currentPlan.invalidate();
       toast.success(`Upgraded to ${data.plan}!`);
       router.push("/dashboard");
     },
