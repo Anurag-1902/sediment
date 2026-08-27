@@ -27,6 +27,7 @@ import {
   MessageSquare,
   MessageCircle,
   ListTodo,
+  Trash2,
 } from "lucide-react";
 import { TeamMembersSelector } from "@/components/dashboard/team-members-selector";
 
@@ -584,6 +585,18 @@ function ProjectTasks({ projectId }: { projectId: string }) {
       toast.success("Task updated");
     },
   });
+  const deleteTask = trpc.task.delete.useMutation({
+    onSuccess: () => {
+      utils.task.listByProject.invalidate({ projectId });
+      toast.success("Task deleted");
+      setConfirmDeleteTaskId(null);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setConfirmDeleteTaskId(null);
+    },
+  });
+  const [confirmDeleteTaskId, setConfirmDeleteTaskId] = useState<string | null>(null);
 
   const columns: Array<{ key: "OPEN" | "IN_PROGRESS" | "BLOCKED" | "CLOSED"; label: string; color: string }> = [
     { key: "OPEN", label: "Open", color: "bg-stone-500/5" },
@@ -666,6 +679,37 @@ function ProjectTasks({ projectId }: { projectId: string }) {
                       <p className="text-[10px] text-muted-foreground">
                         Last mentioned: {new Date(task.lastMentionedAt).toLocaleDateString()}
                       </p>
+                    )}
+                    {task.status === "CLOSED" && (
+                      <div className="pt-1 border-t border-border-custom">
+                        {confirmDeleteTaskId === task.id ? (
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-[11px] text-text-muted flex-1">Delete this task?</span>
+                            <button
+                              onClick={() => deleteTask.mutate({ id: task.id })}
+                              disabled={deleteTask.isPending}
+                              className="text-[11px] font-medium rounded px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                            >
+                              {deleteTask.isPending ? "Deleting..." : "Yes, delete"}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteTaskId(null)}
+                              disabled={deleteTask.isPending}
+                              className="text-[11px] font-medium rounded px-2 py-1 text-text-muted hover:text-text transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteTaskId(task.id)}
+                            className="flex items-center gap-1 text-[11px] text-text-muted hover:text-red-400 transition-colors pt-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete task
+                          </button>
+                        )}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
