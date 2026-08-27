@@ -140,6 +140,21 @@ export default function PricingPage() {
     createSubscription.mutate({ plan });
   }
 
+  const planRank: Record<string, number> = {
+    FREE: 0,
+    STARTER: 1,
+    PRO: 2,
+    BUSINESS: 3,
+  };
+
+  const currentRank =
+    currentPlan?.isActive && currentPlan.plan
+      ? planRank[currentPlan.plan] ?? 0
+      : 0;
+
+  // Only show plans strictly higher than the user's current active tier
+  const visiblePlans = plans.filter((plan) => planRank[plan.key] > currentRank);
+
   return (
     <>
       <main className="min-h-screen bg-charcoal pt-24 pb-16 px-4">
@@ -158,7 +173,7 @@ export default function PricingPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-text flex items-center gap-2">
-                    Your {currentPlan.plan === "BUSINESS" ? "Business" : "Pro"} Subscription
+                    Your {currentPlan.plan === "BUSINESS" ? "Business" : currentPlan.plan === "PRO" ? "Pro" : "Starter"} Subscription
                   </h3>
                   <p className="text-sm text-text-muted mt-1">Currently active</p>
                 </div>
@@ -271,51 +286,62 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.key}
-              className={`rounded-2xl border p-8 ${
-                plan.highlighted
-                  ? "border-amber bg-surface shadow-lg shadow-amber/5"
-                  : "border-border-custom bg-surface"
-              }`}
-            >
-              {plan.highlighted && (
-                <span className="text-xs font-semibold text-amber uppercase tracking-wider">
-                  Most Popular
-                </span>
-              )}
-              <h2 className="text-xl font-bold text-text mt-2">{plan.name}</h2>
-              <p className="text-sm text-text-muted mt-1">{plan.description}</p>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-text">{plan.price}</span>
-                <span className="text-text-muted">{plan.period}</span>
-              </div>
-
-              <button
-                onClick={() => handleChoosePlan(plan.key)}
-                disabled={createSubscription.isPending}
-                className={`mt-6 w-full rounded-lg py-3 text-sm font-semibold transition-colors ${
+        {visiblePlans.length > 0 ? (
+          <div className={`mx-auto max-w-5xl grid gap-6 ${visiblePlans.length === 1 ? "md:grid-cols-1 max-w-md" : visiblePlans.length === 2 ? "md:grid-cols-2 max-w-3xl" : "md:grid-cols-3"}`}>
+            {visiblePlans.map((plan) => (
+              <div
+                key={plan.key}
+                className={`rounded-2xl border p-8 ${
                   plan.highlighted
-                    ? "bg-amber text-charcoal hover:bg-amber-light"
-                    : "bg-surface-raised text-text hover:bg-surface-raised/80 border border-border-custom"
+                    ? "border-amber bg-surface shadow-lg shadow-amber/5"
+                    : "border-border-custom bg-surface"
                 }`}
               >
-                {createSubscription.isPending ? "Processing..." : `Get ${plan.name}`}
-              </button>
+                {plan.highlighted && (
+                  <span className="text-xs font-semibold text-amber uppercase tracking-wider">
+                    Most Popular
+                  </span>
+                )}
+                <h2 className="text-xl font-bold text-text mt-2">{plan.name}</h2>
+                <p className="text-sm text-text-muted mt-1">{plan.description}</p>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-text">{plan.price}</span>
+                  <span className="text-text-muted">{plan.period}</span>
+                </div>
 
-              <ul className="mt-6 space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm text-text-muted">
-                    <Check className="h-4 w-4 text-amber shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+                <button
+                  onClick={() => handleChoosePlan(plan.key)}
+                  disabled={createSubscription.isPending}
+                  className={`mt-6 w-full rounded-lg py-3 text-sm font-semibold transition-colors ${
+                    plan.highlighted
+                      ? "bg-amber text-charcoal hover:bg-amber-light"
+                      : "bg-surface-raised text-text hover:bg-surface-raised/80 border border-border-custom"
+                  }`}
+                >
+                  {createSubscription.isPending ? "Processing..." : `Get ${plan.name}`}
+                </button>
+
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-text-muted">
+                      <Check className="h-4 w-4 text-amber shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mx-auto max-w-lg text-center rounded-2xl border border-amber/30 bg-surface p-8">
+            <h3 className="text-lg font-semibold text-text mb-2">
+              You&apos;re on our top plan 🎉
+            </h3>
+            <p className="text-sm text-text-muted">
+              You have the Business plan — the highest tier with every feature unlocked. There&apos;s nothing more to upgrade to.
+            </p>
+          </div>
+        )}
       </main>
     </>
   );
