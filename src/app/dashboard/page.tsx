@@ -40,9 +40,9 @@ export default function DashboardPage() {
   });
   const activePlan = planData?.isActive ? planData.plan : null;
 
-  const deleteProject = trpc.project.delete.useMutation({
+  const deleteProject = trpc.project.permanentDelete.useMutation({
     onSuccess: () => {
-      toast.success("Project archived");
+      toast.success("Project permanently deleted");
       utils.project.list.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                             {confirmDeleteId === project.id ? (
                               <div className="space-y-2">
                                 <p className="text-xs text-text-muted">
-                                  Are you sure? This will archive the project.
+                                  Are you sure? This will permanently delete the project.
                                 </p>
                                 <div className="flex gap-2">
                                   <button
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                                     disabled={deleteProject.isPending}
                                     className="flex-1 rounded-md bg-red-500/20 px-2 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/30 transition-colors"
                                   >
-                                    {deleteProject.isPending ? "Archiving..." : "Yes, archive"}
+                                    {deleteProject.isPending ? "Deleting..." : "Yes, delete"}
                                   </button>
                                   <button
                                     onClick={() => setConfirmDeleteId(null)}
@@ -333,7 +333,7 @@ export default function DashboardPage() {
                                 className="flex w-full items-center gap-2 py-1 text-sm text-red-400 hover:text-red-300 transition-colors"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
-                                Archive Project
+                                Delete Project
                               </button>
                             )}
                           </div>
