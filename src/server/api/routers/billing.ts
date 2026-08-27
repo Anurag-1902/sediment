@@ -1,39 +1,40 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { razorpay, PLANS } from "../../razorpay";
+import { razorpay, PLAN_CONFIG, getOrCreateRazorpayPlan } from "../../razorpay";
 import { TRPCError } from "@trpc/server";
-import crypto from "crypto";
 
 export const billingRouter = createTRPCRouter({
-  createOrder: protectedProcedure
+  createSubscription: protectedProcedure
     .input(z.object({ plan: z.enum(["PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
-      const planDetails = PLANS[input.plan];
+      const planId = await getOrCreateRazorpayPlan(input.plan);
+      const config = PLAN_CONFIG[input.plan];
 
-      const order = await razorpay.orders.create({
-        amount: planDetails.amount,
-        currency: planDetails.currency,
-        receipt: `receipt_${ctx.session.user.id}_${Date.now()}`,
+      const subscription = await razorpay.subscriptions.create({
+        plan_id: planId,
+        total_count: 12, // max 12 billing cycles (1 year)
+        customer_notify: 1,
         notes: {
           userId: ctx.session.user.id,
           plan: input.plan,
         },
-      });
+      } as any);
 
       return {
-        orderId: order.id,
-        amount: planDetails.amount,
-        currency: planDetails.currency,
+        subscriptionId: subscription.id,
+        planId,
+        amount: config.amount,
+        currency: config.currency,
         keyId: process.env.RAZORPAY_KEY_ID!,
         plan: input.plan,
-        description: planDetails.description,
+        description: config.description,
       };
     }),
 
-  verifyPayment: protectedProcedure
+  verifySubscription: protectedProcedure
     .input(
       z.object({
-        razorpayOrderId: z.string(),
+        razorpaySubscriptionId: z.string(),
         razorpayPaymentId: z.string(),
         razorpaySignature: z.string(),
         plan: z.enum(["PRO", "BUSINESS"]),
@@ -41,7 +42,8 @@ export const billingRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
-      const body = input.razorpayOrderId + "|" + input.razorpayPaymentId;
+      const crypto = await import("crypto");
+      const body = input.razorpayPaymentId + "|" + input.razorpaySubscriptionId;
       const expectedSignature = crypto
         .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
         .update(body)
@@ -62,7 +64,7 @@ export const billingRouter = createTRPCRouter({
         where: { id: ctx.session.user.id },
         data: {
           plan: input.plan,
-          razorpaySubscriptionId: input.razorpayPaymentId,
+          razorpaySubscriptionId: input.razorpaySubscriptionId,
           planStartedAt: now,
           planExpiresAt: expiresAt,
           autoRenew: true,
@@ -81,6 +83,7 @@ export const billingRouter = createTRPCRouter({
         planStartedAt: true,
         planExpiresAt: true,
         autoRenew: true,
+        razorpaySubscriptionId: true,
       },
     });
     return {
@@ -88,6 +91,7 @@ export const billingRouter = createTRPCRouter({
       startedAt: user?.planStartedAt,
       expiresAt: user?.planExpiresAt,
       autoRenew: user?.autoRenew ?? false,
+      subscriptionId: user?.razorpaySubscriptionId,
       isActive: user?.plan !== "FREE" && user?.planExpiresAt
         ? new Date(user.planExpiresAt) > new Date()
         : false,
@@ -107,6 +111,20 @@ export const billingRouter = createTRPCRouter({
 
   cancelAutoRenew: protectedProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { razorpaySubscriptionId: true },
+    });
+
+    // Cancel the subscription on Razorpay side too
+    if (user?.razorpaySubscriptionId) {
+      try {
+        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, false);
+      } catch (e) {
+        console.error("Failed to cancel Razorpay subscription:", e);
+      }
+    }
+
     await prisma.user.update({
       where: { id: ctx.session.user.id },
       data: { autoRenew: false },
@@ -116,6 +134,20 @@ export const billingRouter = createTRPCRouter({
 
   downgradeToFree: protectedProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { razorpaySubscriptionId: true },
+    });
+
+    // Cancel the subscription on Razorpay side
+    if (user?.razorpaySubscriptionId) {
+      try {
+        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, false);
+      } catch (e) {
+        console.error("Failed to cancel Razorpay subscription:", e);
+      }
+    }
+
     await prisma.user.update({
       where: { id: ctx.session.user.id },
       data: {

@@ -66,13 +66,13 @@ export default function PricingPage() {
     },
     onError: (err) => toast.error(err.message),
   });
-  const createOrder = trpc.billing.createOrder.useMutation({
+  const createSubscription = trpc.billing.createSubscription.useMutation({
     onSuccess: (data) => {
       openRazorpay(data);
     },
     onError: (err) => toast.error(err.message),
   });
-  const verifyPayment = trpc.billing.verifyPayment.useMutation({
+  const verifySubscription = trpc.billing.verifySubscription.useMutation({
     onSuccess: async (data) => {
       await utils.billing.currentPlan.invalidate();
       toast.success(`Upgraded to ${data.plan}!`);
@@ -81,8 +81,8 @@ export default function PricingPage() {
     onError: (err) => toast.error(err.message),
   });
 
-  function openRazorpay(orderData: {
-    orderId: string;
+  function openRazorpay(data: {
+    subscriptionId: string;
     amount: number;
     currency: string;
     keyId: string;
@@ -90,22 +90,20 @@ export default function PricingPage() {
     description: string;
   }) {
     const options = {
-      key: orderData.keyId,
-      amount: orderData.amount,
-      currency: orderData.currency,
+      key: data.keyId,
+      subscription_id: data.subscriptionId,
       name: "Sediment",
-      description: orderData.description,
-      order_id: orderData.orderId,
+      description: data.description,
       handler: (response: {
-        razorpay_order_id: string;
+        razorpay_subscription_id: string;
         razorpay_payment_id: string;
         razorpay_signature: string;
       }) => {
-        verifyPayment.mutate({
-          razorpayOrderId: response.razorpay_order_id,
+        verifySubscription.mutate({
+          razorpaySubscriptionId: response.razorpay_subscription_id,
           razorpayPaymentId: response.razorpay_payment_id,
           razorpaySignature: response.razorpay_signature,
-          plan: orderData.plan,
+          plan: data.plan,
         });
       },
       prefill: {
@@ -126,7 +124,7 @@ export default function PricingPage() {
       router.push("/sign-in");
       return;
     }
-    createOrder.mutate({ plan });
+    createSubscription.mutate({ plan });
   }
 
   return (
@@ -284,14 +282,14 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handleChoosePlan(plan.key)}
-                disabled={createOrder.isPending}
+                disabled={createSubscription.isPending}
                 className={`mt-6 w-full rounded-lg py-3 text-sm font-semibold transition-colors ${
                   plan.highlighted
                     ? "bg-amber text-charcoal hover:bg-amber-light"
                     : "bg-surface-raised text-text hover:bg-surface-raised/80 border border-border-custom"
                 }`}
               >
-                {createOrder.isPending ? "Processing..." : `Get ${plan.name}`}
+                {createSubscription.isPending ? "Processing..." : `Get ${plan.name}`}
               </button>
 
               <ul className="mt-6 space-y-3">
