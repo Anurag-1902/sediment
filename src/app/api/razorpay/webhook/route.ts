@@ -33,12 +33,18 @@ export async function POST(req: Request) {
 
       const user = await prisma.user.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
+        select: { id: true, plan: true },
       });
 
       if (user) {
         const now = new Date();
         const expiresAt = new Date(now);
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        // Check user's current plan to set correct expiry
+        if (user.plan === "STARTER") {
+          expiresAt.setDate(expiresAt.getDate() + 1);
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        }
 
         await prisma.user.update({
           where: { id: user.id },
@@ -57,6 +63,7 @@ export async function POST(req: Request) {
 
       const user = await prisma.user.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
+        select: { id: true, plan: true },
       });
 
       if (user) {
@@ -76,6 +83,7 @@ export async function POST(req: Request) {
 
       const user = await prisma.user.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
+        select: { id: true, plan: true },
       });
 
       if (user) {

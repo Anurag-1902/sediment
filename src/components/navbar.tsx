@@ -48,7 +48,7 @@ export function Navbar() {
                 icon={activePlan === "BUSINESS" ? Crown : Sparkles}
                 className="h-3 w-3"
               />
-              {activePlan === "BUSINESS" ? "Business" : "Pro"}
+              {activePlan === "BUSINESS" ? "Business" : activePlan === "PRO" ? "Pro" : "Starter"}
             </span>
           )}
         </Link>

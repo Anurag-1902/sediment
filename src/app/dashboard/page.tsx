@@ -122,7 +122,7 @@ export default function DashboardPage() {
                 </p>
                 {activePlan ? (
                   <p className={`text-xs font-semibold ${activePlan === "BUSINESS" ? "text-amber" : "text-amber/80"}`}>
-                    {activePlan === "BUSINESS" ? "Business" : "Pro"}
+                    {activePlan === "BUSINESS" ? "Business" : activePlan === "PRO" ? "Pro" : "Starter"}
                   </p>
                 ) : (
                   <p className="text-xs text-text-muted">Free</p>

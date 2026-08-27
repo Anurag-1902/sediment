@@ -8,6 +8,19 @@ import { useAuth } from "@/hooks/use-auth";
 
 const plans = [
   {
+    key: "STARTER" as const,
+    name: "Starter",
+    price: "₹1",
+    period: "/day",
+    description: "24-hour access to test all features",
+    features: [
+      "All features for 24 hours",
+      "1 project",
+      "Up to 5 team members",
+    ],
+    highlighted: false,
+  },
+  {
     key: "PRO" as const,
     name: "Pro",
     price: "₹499",
@@ -86,7 +99,7 @@ export default function PricingPage() {
     amount: number;
     currency: string;
     keyId: string;
-    plan: "PRO" | "BUSINESS";
+    plan: "STARTER" | "PRO" | "BUSINESS";
     description: string;
   }) {
     const options = {
@@ -119,7 +132,7 @@ export default function PricingPage() {
     rzp.open();
   }
 
-  function handleChoosePlan(plan: "PRO" | "BUSINESS") {
+  function handleChoosePlan(plan: "STARTER" | "PRO" | "BUSINESS") {
     if (!session) {
       router.push("/sign-in");
       return;
@@ -258,7 +271,7 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mx-auto max-w-4xl grid gap-6 md:grid-cols-2">
+        <div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (
             <div
               key={plan.key}

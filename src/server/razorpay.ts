@@ -10,6 +10,19 @@ export const razorpay = new Razorpay({
 });
 
 export const PLAN_CONFIG = {
+  STARTER: {
+    name: "Sediment Starter",
+    amount: 100, // ₹1 in paise
+    currency: "INR",
+    period: "daily" as const,
+    interval: 1,
+    description: "Sediment Starter — 24-hour access to test all features",
+    features: [
+      "All features for 24 hours",
+      "1 project",
+      "Up to 5 team members",
+    ],
+  },
   PRO: {
     name: "Sediment Pro",
     amount: 49900, // ₹499 in paise
@@ -46,7 +59,7 @@ export const PLAN_CONFIG = {
 const planIdCache: Record<string, string> = {};
 
 export async function getOrCreateRazorpayPlan(
-  planKey: "PRO" | "BUSINESS"
+  planKey: "STARTER" | "PRO" | "BUSINESS"
 ): Promise<string> {
   if (planIdCache[planKey]) {
     return planIdCache[planKey];

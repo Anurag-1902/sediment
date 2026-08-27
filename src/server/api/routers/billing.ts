@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 export const billingRouter = createTRPCRouter({
   createSubscription: protectedProcedure
-    .input(z.object({ plan: z.enum(["PRO", "BUSINESS"]) }))
+    .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
       const planId = await getOrCreateRazorpayPlan(input.plan);
       const config = PLAN_CONFIG[input.plan];
@@ -37,7 +37,7 @@ export const billingRouter = createTRPCRouter({
         razorpaySubscriptionId: z.string(),
         razorpayPaymentId: z.string(),
         razorpaySignature: z.string(),
-        plan: z.enum(["PRO", "BUSINESS"]),
+        plan: z.enum(["STARTER", "PRO", "BUSINESS"]),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -58,7 +58,11 @@ export const billingRouter = createTRPCRouter({
 
       const now = new Date();
       const expiresAt = new Date(now);
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      if (input.plan === "STARTER") {
+        expiresAt.setDate(expiresAt.getDate() + 1); // 24 hours
+      } else {
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
 
       await prisma.user.update({
         where: { id: ctx.session.user.id },
