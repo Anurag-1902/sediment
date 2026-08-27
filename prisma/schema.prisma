@@ -29,6 +29,11 @@ model User {
   contextLogs   ProjectContextLog[]
   slackWorkspace SlackWorkspace?
 
+  plan                    String    @default("FREE") @map("plan")
+  razorpayCustomerId      String?   @map("razorpay_customer_id")
+  razorpaySubscriptionId  String?   @map("razorpay_subscription_id")
+  planExpiresAt           DateTime? @map("plan_expires_at")
+
   @@unique([email])
   @@map("user")
 }

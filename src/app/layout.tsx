@@ -40,6 +40,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} antialiased`}
     >
       <body className="bg-charcoal text-text font-sans">
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
         <Providers>{children}</Providers>
       </body>
     </html>
