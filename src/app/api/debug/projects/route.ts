@@ -3,8 +3,19 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const prisma = await getPrisma();
+  const url = new URL(req.url);
+  const deactivateId = url.searchParams.get("deactivate");
+
+  if (deactivateId) {
+    await prisma.project.update({
+      where: { id: deactivateId },
+      data: { isActive: false },
+    });
+    return NextResponse.json({ ok: true, deactivated: deactivateId });
+  }
+
   const projects = await prisma.project.findMany({
     where: { isActive: true },
     select: {
