@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure } from "../trpc";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { WebClient } from "@slack/web-api";
 
 export const slackWorkspaceRouter = createTRPCRouter({
-  get: protectedProcedure.query(async ({ ctx }) => {
+  get: paidProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const workspace = await prisma.slackWorkspace.findUnique({
       where: { userId: ctx.session.user.id },
@@ -25,7 +25,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
     };
   }),
 
-  save: protectedProcedure
+  save: paidProcedure
     .input(
       z.object({
         workspaceName: z.string().optional().default("My Workspace"),
@@ -83,7 +83,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
       };
     }),
 
-  test: protectedProcedure.mutation(async ({ ctx }) => {
+  test: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
 
@@ -133,7 +133,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
     }
   }),
 
-  delete: protectedProcedure.mutation(async ({ ctx }) => {
+  delete: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
 

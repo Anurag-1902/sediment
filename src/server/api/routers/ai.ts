@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure } from "../trpc";
 import { answerProjectQuestion } from "@/server/ai";
 
 export const aiRouter = createTRPCRouter({
-  ask: protectedProcedure
+  ask: paidProcedure
     .input(z.object({ projectId: z.string(), question: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -51,7 +51,7 @@ export const aiRouter = createTRPCRouter({
       return { answer };
     }),
 
-  history: protectedProcedure
+  history: paidProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();

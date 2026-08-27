@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure } from "../trpc";
 import { getChannelList, resolveSlackUser, getSlackConfigForUser, getSlackClientForUser } from "@/server/slack";
 
 export const slackRouter = createTRPCRouter({
-  channels: protectedProcedure.query(async ({ ctx }) => {
+  channels: paidProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const config = await getSlackConfigForUser(userId);
 
@@ -21,7 +21,7 @@ export const slackRouter = createTRPCRouter({
       .map((c) => ({ id: c.id, name: c.name }));
   }),
 
-  users: protectedProcedure.query(async ({ ctx }) => {
+  users: paidProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const config = await getSlackConfigForUser(userId);
     if (!config) {
@@ -57,7 +57,7 @@ export const slackRouter = createTRPCRouter({
       .sort((a, b) => a.realName.localeCompare(b.realName));
   }),
 
-  resolveUser: protectedProcedure
+  resolveUser: paidProcedure
     .input(z.object({ handle: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const user = await resolveSlackUser(input.handle, ctx.session.user.id);

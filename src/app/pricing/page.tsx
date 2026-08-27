@@ -53,6 +53,21 @@ export default function PricingPage() {
     },
     onError: (err) => toast.error(err.message),
   });
+  const cancelAutoRenew = trpc.billing.cancelAutoRenew.useMutation({
+    onSuccess: async () => {
+      await utils.billing.currentPlan.invalidate();
+      toast.success("Auto-renew cancelled — you'll keep access until the expiry date");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const downgradeToFree = trpc.billing.downgradeToFree.useMutation({
+    onSuccess: async () => {
+      await utils.billing.currentPlan.invalidate();
+      toast.success("Subscription cancelled — you're now on the Free plan");
+      router.push("/pricing");
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const createOrder = trpc.billing.createOrder.useMutation({
     onSuccess: (data) => {
       openRazorpay(data);
@@ -189,6 +204,28 @@ export default function PricingPage() {
                       currentPlan.autoRenew ? "translate-x-6" : "translate-x-1"
                     }`}
                   />
+                </button>
+              </div>
+              <div className="mt-4 border-t border-border-custom pt-4 flex flex-col sm:flex-row gap-3">
+                {currentPlan.autoRenew && (
+                  <button
+                    onClick={() => cancelAutoRenew.mutate()}
+                    disabled={cancelAutoRenew.isPending}
+                    className="flex-1 rounded-lg border border-border-custom py-2 text-sm font-medium text-text hover:bg-surface-raised/60 transition-colors"
+                  >
+                    {cancelAutoRenew.isPending ? "Cancelling..." : "Cancel auto-renew"}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (window.confirm("Cancel your subscription now and downgrade to the Free plan immediately?")) {
+                      downgradeToFree.mutate();
+                    }
+                  }}
+                  disabled={downgradeToFree.isPending}
+                  className="flex-1 rounded-lg border border-red-500/40 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  {downgradeToFree.isPending ? "Cancelling..." : "Cancel subscription now"}
                 </button>
               </div>
             </div>

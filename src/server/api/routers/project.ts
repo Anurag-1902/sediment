@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure } from "../trpc";
 import { resolveSlackUser } from "@/server/slack";
 
 export const projectRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: paidProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
     return prisma.project.findMany({
@@ -24,7 +24,7 @@ export const projectRouter = createTRPCRouter({
     });
   }),
 
-  listArchived: protectedProcedure.query(async ({ ctx }) => {
+  listArchived: paidProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
     return prisma.project.findMany({
@@ -39,7 +39,7 @@ export const projectRouter = createTRPCRouter({
     });
   }),
 
-  get: protectedProcedure
+  get: paidProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -72,7 +72,7 @@ export const projectRouter = createTRPCRouter({
       return project;
     }),
 
-  create: protectedProcedure
+  create: paidProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -121,7 +121,7 @@ export const projectRouter = createTRPCRouter({
       return project;
     }),
 
-  update: protectedProcedure
+  update: paidProcedure
     .input(
       z.object({
         id: z.string(),
@@ -185,7 +185,7 @@ export const projectRouter = createTRPCRouter({
       return updated;
     }),
 
-  delete: protectedProcedure
+  delete: paidProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -203,7 +203,7 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
-  restore: protectedProcedure
+  restore: paidProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -221,7 +221,7 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
-  permanentDelete: protectedProcedure
+  permanentDelete: paidProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -236,7 +236,7 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
-  stats: protectedProcedure
+  stats: paidProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -275,7 +275,7 @@ export const projectRouter = createTRPCRouter({
       };
     }),
 
-  analytics: protectedProcedure
+  analytics: paidProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();

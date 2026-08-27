@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure } from "../trpc";
 
 export const taskRouter = createTRPCRouter({
-  listByProject: protectedProcedure
+  listByProject: paidProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -24,7 +24,7 @@ export const taskRouter = createTRPCRouter({
       });
     }),
 
-  updateStatus: protectedProcedure
+  updateStatus: paidProcedure
     .input(
       z.object({
         id: z.string(),

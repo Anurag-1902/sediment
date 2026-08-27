@@ -59,3 +59,25 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     },
   });
 });
+
+export const paidProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const prisma = await ctx.getPrisma();
+  const user = await prisma.user.findUnique({
+    where: { id: ctx.session.user.id },
+    select: { plan: true, planExpiresAt: true },
+  });
+
+  const isActive =
+    user && user.plan !== "FREE" && user.planExpiresAt
+      ? new Date(user.planExpiresAt) > new Date()
+      : false;
+
+  if (!isActive) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "An active paid plan is required to perform this action.",
+    });
+  }
+
+  return next({ ctx });
+});

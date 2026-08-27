@@ -104,4 +104,28 @@ export const billingRouter = createTRPCRouter({
       });
       return { ok: true, autoRenew: input.autoRenew };
     }),
+
+  cancelAutoRenew: protectedProcedure.mutation(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
+    await prisma.user.update({
+      where: { id: ctx.session.user.id },
+      data: { autoRenew: false },
+    });
+    return { ok: true, autoRenew: false };
+  }),
+
+  downgradeToFree: protectedProcedure.mutation(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
+    await prisma.user.update({
+      where: { id: ctx.session.user.id },
+      data: {
+        plan: "FREE",
+        planStartedAt: null,
+        planExpiresAt: null,
+        autoRenew: false,
+        razorpaySubscriptionId: null,
+      },
+    });
+    return { ok: true, plan: "FREE" };
+  }),
 });
