@@ -784,11 +784,11 @@ function ProjectSettings({ project }: { project: any }) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle>Edit Project</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-visible">
             <form onSubmit={handleSave} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="s-name">Name</Label>
@@ -911,39 +911,11 @@ function ProjectSettings({ project }: { project: any }) {
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-sm font-medium">Team Members</h3>
-                <p className="text-xs text-text-muted">
-                  Only members listed here can post standup updates. Select workspace users from the dropdown below.
-                </p>
-
-                {isSlackNotConnected ? (
-                  <div className="rounded-xl border-2 border-amber p-4 text-center space-y-3">
-                    <div className="flex justify-center">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber/10">
-                        <MessageSquare className="h-5 w-5 text-amber" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-text">
-                        Connect your Slack workspace
-                      </h3>
-                      <p className="text-xs text-text-muted mt-1">
-                        To select team members, connect your Slack account first.
-                      </p>
-                    </div>
-                    <Link href="/dashboard/settings/slack">
-                      <Button size="sm" className="bg-amber hover:bg-amber-light text-charcoal font-medium">
-                        Connect Slack Account
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <TeamMembersSelector
-                    value={memberHandles}
-                    onChange={setMemberHandles}
-                    hasSlackConnected={!isSlackNotConnected}
-                  />
-                )}
+                <TeamMembersSelector
+                  value={memberHandles}
+                  onChange={setMemberHandles}
+                  hasSlackConnected={!isSlackNotConnected}
+                />
               </div>
 
               <Button

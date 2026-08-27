@@ -124,8 +124,11 @@ export function TeamMembersSelector({
           </div>
 
           {dropdownOpen && (
-            <div className="absolute z-10 w-full mt-1 bg-charcoal border border-border rounded-lg shadow-lg max-h-[400px] flex flex-col">
-              <div className="p-2 border-b border-border">
+            <div
+              className="absolute z-50 w-full mt-1 bg-charcoal border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: "360px" }}
+            >
+              <div className="p-2 border-b border-border shrink-0">
                 <input
                   type="text"
                   value={memberSearch}
@@ -136,7 +139,10 @@ export function TeamMembersSelector({
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
-              <div className="flex-1 overflow-y-auto divide-y divide-border scrollbar-thin">
+              <div
+                className="flex-1 overflow-y-auto divide-y divide-border scrollbar-thin"
+                style={{ maxHeight: "300px" }}
+              >
                 {!workspaceUsers ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <div
