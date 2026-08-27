@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, paidProcedure } from "../trpc";
+import { createTRPCRouter, paidProcedure, protectedProcedure } from "../trpc";
 import { resolveSlackUser } from "@/server/slack";
 
 export const projectRouter = createTRPCRouter({
-  list: paidProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
     return prisma.project.findMany({
@@ -24,7 +24,7 @@ export const projectRouter = createTRPCRouter({
     });
   }),
 
-  listArchived: paidProcedure.query(async ({ ctx }) => {
+  listArchived: protectedProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
     return prisma.project.findMany({
@@ -39,7 +39,7 @@ export const projectRouter = createTRPCRouter({
     });
   }),
 
-  get: paidProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -121,7 +121,7 @@ export const projectRouter = createTRPCRouter({
       return project;
     }),
 
-  update: paidProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -185,7 +185,7 @@ export const projectRouter = createTRPCRouter({
       return updated;
     }),
 
-  delete: paidProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -203,7 +203,7 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
-  restore: paidProcedure
+  restore: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -221,7 +221,7 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
-  permanentDelete: paidProcedure
+  permanentDelete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -232,11 +232,33 @@ export const projectRouter = createTRPCRouter({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
-      await prisma.project.delete({ where: { id: input.id } });
+
+      // Explicitly delete child records in dependency order, then the project.
+      // This guarantees deletion succeeds even if the live DB is missing cascade constraints.
+      await prisma.$transaction(async (tx) => {
+        const sessions = await tx.syncSession.findMany({
+          where: { projectId: input.id },
+          select: { id: true },
+        });
+        const sessionIds = sessions.map((s) => s.id);
+
+        if (sessionIds.length > 0) {
+          await tx.followUp.deleteMany({ where: { sessionId: { in: sessionIds } } });
+          await tx.devUpdate.deleteMany({ where: { sessionId: { in: sessionIds } } });
+        }
+        await tx.followUp.deleteMany({ where: { task: { projectId: input.id } } });
+        await tx.task.deleteMany({ where: { projectId: input.id } });
+        await tx.syncSession.deleteMany({ where: { projectId: input.id } });
+        await tx.aIQuery.deleteMany({ where: { projectId: input.id } });
+        await tx.projectContextLog.deleteMany({ where: { projectId: input.id } });
+        await tx.projectMember.deleteMany({ where: { projectId: input.id } });
+        await tx.project.delete({ where: { id: input.id } });
+      });
+
       return { ok: true };
     }),
 
-  stats: paidProcedure
+  stats: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
@@ -275,7 +297,7 @@ export const projectRouter = createTRPCRouter({
       };
     }),
 
-  analytics: paidProcedure
+  analytics: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();

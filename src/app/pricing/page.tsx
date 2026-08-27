@@ -155,28 +155,59 @@ export default function PricingPage() {
                   Active
                 </span>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3 mb-4">
-                <div>
-                  <p className="text-xs text-text-muted mb-1">Purchased on</p>
-                  <p className="text-sm font-medium text-text">
-                    {currentPlan.startedAt
-                      ? new Date(currentPlan.startedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                      : "—"}
-                  </p>
+              <div className="mb-4 rounded-xl border border-border-custom bg-charcoal p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-xs text-text-muted mb-0.5">Billing period</p>
+                    <p className="text-sm font-semibold text-text">
+                      {currentPlan.startedAt
+                        ? new Date(currentPlan.startedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                        : "—"}
+                      <span className="text-text-muted font-normal mx-2">→</span>
+                      {currentPlan.expiresAt
+                        ? new Date(currentPlan.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-text-muted mb-0.5">
+                      {currentPlan.autoRenew ? "Renews in" : "Expires in"}
+                    </p>
+                    <p className="text-sm font-semibold text-amber">
+                      {currentPlan.expiresAt
+                        ? (() => {
+                            const days = Math.max(
+                              0,
+                              Math.ceil(
+                                (new Date(currentPlan.expiresAt).getTime() - Date.now()) /
+                                  (1000 * 60 * 60 * 24)
+                              )
+                            );
+                            return `${days} day${days === 1 ? "" : "s"}`;
+                          })()
+                        : "—"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-text-muted mb-1">Renews / Expires on</p>
-                  <p className="text-sm font-medium text-text">
-                    {currentPlan.expiresAt
-                      ? new Date(currentPlan.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted mb-1">Auto-renew</p>
-                  <p className="text-sm font-medium text-text">
-                    {currentPlan.autoRenew ? "Enabled" : "Disabled"}
-                  </p>
+                {currentPlan.startedAt && currentPlan.expiresAt && (
+                  <div className="w-full h-1.5 rounded-full bg-surface-raised overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber to-amber-dark transition-all"
+                      style={{
+                        width: `${(() => {
+                          const start = new Date(currentPlan.startedAt).getTime();
+                          const end = new Date(currentPlan.expiresAt).getTime();
+                          const now = Date.now();
+                          const pct = ((now - start) / (end - start)) * 100;
+                          return Math.min(100, Math.max(0, pct));
+                        })()}%`,
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[10px] text-text-muted">Start</span>
+                  <span className="text-[10px] text-text-muted">End</span>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border-custom bg-charcoal px-4 py-3">
