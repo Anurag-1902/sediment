@@ -1,4 +1,4 @@
-import { postSyncMessage, getSlackConfigForUser } from "@/server/slack";
+import { postSyncMessage, getSlackConfigForOrg } from "@/server/slack";
 import { getPrisma } from "@/lib/krutai-server";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,7 @@ export async function GET() {
       continue;
     }
 
-    const config = await getSlackConfigForUser(project.ownerId);
+    const config = await getSlackConfigForOrg(project.organizationId);
     if (!config) {
       results.push({
         projectId: project.id,

@@ -1,12 +1,24 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, paidProcedure } from "../trpc";
-import { getChannelList, resolveSlackUser, getSlackConfigForUser, getSlackClientForUser } from "@/server/slack";
+import { getChannelList, resolveSlackUser, getSlackConfigForOrg, getSlackClientForOrg } from "@/server/slack";
 
 export const slackRouter = createTRPCRouter({
   channels: paidProcedure.query(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
-    const config = await getSlackConfigForUser(userId);
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId },
+      select: { organizationId: true },
+    });
+    const organizationId = membership?.organizationId;
+    if (!organizationId) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "No organization found",
+      });
+    }
+    const config = await getSlackConfigForOrg(organizationId);
 
     if (!config) {
       throw new TRPCError({
@@ -15,22 +27,34 @@ export const slackRouter = createTRPCRouter({
       });
     }
 
-    const channels = await getChannelList(userId);
+    const channels = await getChannelList(organizationId);
     return channels
       .filter((c) => !c.is_archived)
       .map((c) => ({ id: c.id, name: c.name }));
   }),
 
   users: paidProcedure.query(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
     const userId = ctx.session.user.id;
-    const config = await getSlackConfigForUser(userId);
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId },
+      select: { organizationId: true },
+    });
+    const organizationId = membership?.organizationId;
+    if (!organizationId) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "No organization found",
+      });
+    }
+    const config = await getSlackConfigForOrg(organizationId);
     if (!config) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
         message: "Slack not connected. Please connect your Slack account first.",
       });
     }
-    const client = await getSlackClientForUser(userId);
+    const client = await getSlackClientForOrg(organizationId);
     const result = await client.users.list({ limit: 1000 });
     const members = (result.members ?? []) as Array<{
       id: string;
@@ -60,7 +84,14 @@ export const slackRouter = createTRPCRouter({
   resolveUser: paidProcedure
     .input(z.object({ handle: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const user = await resolveSlackUser(input.handle, ctx.session.user.id);
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId },
+        select: { organizationId: true },
+      });
+      const organizationId = membership?.organizationId;
+      const user = organizationId ? await resolveSlackUser(input.handle, organizationId) : null;
       if (!user) return null;
       return { id: user.id, name: user.name, realName: user.realName };
     }),

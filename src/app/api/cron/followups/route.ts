@@ -1,5 +1,5 @@
 import { getPrisma } from "@/lib/krutai-server";
-import { postFollowUpMessage, getSlackConfigForUser } from "@/server/slack";
+import { postFollowUpMessage, getSlackConfigForOrg } from "@/server/slack";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export async function GET() {
 
   for (const session of sessions) {
     try {
-      const config = await getSlackConfigForUser(session.project.ownerId);
+      const config = await getSlackConfigForOrg(session.project.organizationId);
       if (!config) {
         results.push({
           sessionId: session.id,

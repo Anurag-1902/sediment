@@ -90,10 +90,11 @@ export const projectRouter = createTRPCRouter({
       const prisma = await ctx.getPrisma();
       const { memberHandles, ...data } = input;
       const userId = ctx.session.user.id;
+      const organizationId = ctx.organizationId;
 
       const resolvedMembers = [];
       for (const handle of memberHandles) {
-          const user = await resolveSlackUser(handle, userId);
+        const user = await resolveSlackUser(handle, organizationId);
         if (!user) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -111,6 +112,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           ...data,
           ownerId: userId,
+          organizationId,
           members: {
             create: resolvedMembers,
           },
@@ -153,7 +155,7 @@ export const projectRouter = createTRPCRouter({
       if (memberHandles !== undefined) {
         const resolvedMembers = [];
         for (const handle of memberHandles) {
-        const user = await resolveSlackUser(handle, userId);
+          const user = await resolveSlackUser(handle, existing.organizationId);
           if (!user) {
             throw new TRPCError({
               code: "BAD_REQUEST",

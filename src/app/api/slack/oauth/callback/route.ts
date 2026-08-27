@@ -26,13 +26,24 @@ export async function GET(request: Request) {
   }
 
   const prisma = await getPrisma();
-  const workspace = await prisma.slackWorkspace.findUnique({
+  const membership = await prisma.organizationMember.findFirst({
     where: { userId: state },
+  });
+
+  if (!membership) {
+    return NextResponse.json(
+      { error: "No organization found for this user. Please save your credentials in the dashboard first." },
+      { status: 400 }
+    );
+  }
+
+  const workspace = await prisma.slackWorkspace.findUnique({
+    where: { organizationId: membership.organizationId },
   });
 
   if (!workspace) {
     return NextResponse.json(
-      { error: "No Slack workspace found for this user. Please save your credentials in the dashboard first." },
+      { error: "No Slack workspace found for this organization. Please save your credentials in the dashboard first." },
       { status: 400 }
     );
   }

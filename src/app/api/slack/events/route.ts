@@ -1,6 +1,6 @@
 import { getPrisma } from "@/lib/krutai-server";
 import {
-  getSlackClientForUser,
+  getSlackClientForOrg,
   getSlackConfigByWorkspaceId,
   verifySlackRequest,
 } from "@/server/slack";
@@ -31,13 +31,13 @@ export const dynamic = "force-dynamic";
 
 const botUserIdCache = new Map<string, string | null>();
 
-async function getBotUserId(userId: string) {
-  if (botUserIdCache.has(userId)) return botUserIdCache.get(userId);
+async function getBotUserId(organizationId: string) {
+  if (botUserIdCache.has(organizationId)) return botUserIdCache.get(organizationId);
 
-  const client = await getSlackClientForUser(userId);
+  const client = await getSlackClientForOrg(organizationId);
   const result = await client.auth.test();
   const botUserId = result.user_id ?? null;
-  botUserIdCache.set(userId, botUserId);
+  botUserIdCache.set(organizationId, botUserId);
   return botUserId;
 }
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   const timestamp = request.headers.get("x-slack-request-timestamp") ?? "";
 
   let signingSecret: string | undefined;
-  let workspaceUserId: string | undefined;
+  let workspaceOrganizationId: string | undefined;
 
   const teamId = body.team_id ?? body?.event?.team;
 
@@ -102,14 +102,14 @@ export async function POST(request: Request) {
   if (workspace) {
     const { decrypt } = await import("@/lib/crypto");
     signingSecret = decrypt(workspace.signingSecretEnc);
-    workspaceUserId = workspace.userId;
+    workspaceOrganizationId = workspace.organizationId;
   }
 
   // Record what we resolved for debugging
   await recordCheckpoint("workspace_lookup", {
     teamId,
     found: !!workspace,
-    workspaceUserId,
+    workspaceOrganizationId,
   }).catch(() => {});
 
   if (!signingSecret) {
@@ -139,9 +139,9 @@ export async function POST(request: Request) {
       if (event.bot_id || event.subtype) {
         return Response.json({ ok: true });
       }
-      if (workspaceUserId) {
+      if (workspaceOrganizationId) {
         try {
-          const botUserId = await getBotUserId(workspaceUserId);
+          const botUserId = await getBotUserId(workspaceOrganizationId);
           if (event.user === botUserId) {
             return Response.json({ ok: true });
           }

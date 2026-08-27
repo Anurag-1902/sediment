@@ -8,7 +8,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
   get: paidProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const workspace = await prisma.slackWorkspace.findUnique({
-      where: { userId: ctx.session.user.id },
+      where: { organizationId: ctx.organizationId },
     });
 
     if (!workspace) return null;
@@ -37,10 +37,9 @@ export const slackWorkspaceRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
-      const userId = ctx.session.user.id;
-
+      const organizationId = ctx.organizationId;
       const existing = await prisma.slackWorkspace.findUnique({
-        where: { userId },
+        where: { organizationId },
       });
 
       // Only encrypt and update secrets that were actually provided
@@ -62,13 +61,13 @@ export const slackWorkspaceRouter = createTRPCRouter({
       }
 
       const workspace = await prisma.slackWorkspace.upsert({
-        where: { userId },
+        where: { organizationId },
         update: {
           workspaceName: input.workspaceName,
           ...encrypted,
         },
         create: {
-          userId,
+          organizationId,
           workspaceName: input.workspaceName,
           clientIdEnc: encrypted.clientIdEnc,
           clientSecretEnc: encrypted.clientSecretEnc!,
@@ -85,10 +84,10 @@ export const slackWorkspaceRouter = createTRPCRouter({
 
   test: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
-    const userId = ctx.session.user.id;
+    const organizationId = ctx.organizationId;
 
     const workspace = await prisma.slackWorkspace.findUnique({
-      where: { userId },
+      where: { organizationId },
     });
 
     if (!workspace) {
@@ -111,7 +110,7 @@ export const slackWorkspaceRouter = createTRPCRouter({
       }
 
       await prisma.slackWorkspace.update({
-        where: { userId },
+        where: { organizationId },
         data: {
           workspaceId: result.team_id ?? undefined,
           botUserId: result.user_id ?? undefined,
@@ -135,10 +134,10 @@ export const slackWorkspaceRouter = createTRPCRouter({
 
   delete: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
-    const userId = ctx.session.user.id;
+    const organizationId = ctx.organizationId;
 
     await prisma.slackWorkspace.deleteMany({
-      where: { userId },
+      where: { organizationId },
     });
 
     return { success: true };

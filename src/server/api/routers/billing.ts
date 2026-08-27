@@ -73,8 +73,20 @@ export const billingRouter = createTRPCRouter({
         expiresAt.setMonth(expiresAt.getMonth() + 1);
       }
 
-      await prisma.user.update({
-        where: { id: ctx.session.user.id },
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId: ctx.session.user.id },
+        include: { organization: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No organization found",
+        });
+      }
+
+      await prisma.organization.update({
+        where: { id: membership.organization.id },
         data: {
           plan: input.plan,
           razorpaySubscriptionId: input.razorpaySubscriptionId,
@@ -89,24 +101,29 @@ export const billingRouter = createTRPCRouter({
 
   currentPlan: protectedProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: {
-        plan: true,
-        planStartedAt: true,
-        planExpiresAt: true,
-        autoRenew: true,
-        razorpaySubscriptionId: true,
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: ctx.session.user.id },
+      include: {
+        organization: {
+          select: {
+            plan: true,
+            planStartedAt: true,
+            planExpiresAt: true,
+            autoRenew: true,
+            razorpaySubscriptionId: true,
+          },
+        },
       },
     });
+    const org = membership?.organization;
     return {
-      plan: user?.plan || "FREE",
-      startedAt: user?.planStartedAt,
-      expiresAt: user?.planExpiresAt,
-      autoRenew: user?.autoRenew ?? false,
-      subscriptionId: user?.razorpaySubscriptionId,
-      isActive: user?.plan !== "FREE" && user?.planExpiresAt
-        ? new Date(user.planExpiresAt) > new Date()
+      plan: org?.plan || "FREE",
+      startedAt: org?.planStartedAt,
+      expiresAt: org?.planExpiresAt,
+      autoRenew: org?.autoRenew ?? false,
+      subscriptionId: org?.razorpaySubscriptionId,
+      isActive: org?.plan !== "FREE" && org?.planExpiresAt
+        ? new Date(org.planExpiresAt) > new Date()
         : false,
     };
   }),
@@ -115,8 +132,20 @@ export const billingRouter = createTRPCRouter({
     .input(z.object({ autoRenew: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
-      await prisma.user.update({
-        where: { id: ctx.session.user.id },
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId: ctx.session.user.id },
+        include: { organization: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No organization found",
+        });
+      }
+
+      await prisma.organization.update({
+        where: { id: membership.organization.id },
         data: { autoRenew: input.autoRenew },
       });
       return { ok: true, autoRenew: input.autoRenew };
@@ -124,22 +153,29 @@ export const billingRouter = createTRPCRouter({
 
   cancelAutoRenew: protectedProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: { razorpaySubscriptionId: true },
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: ctx.session.user.id },
+      include: { organization: true },
     });
 
+    if (!membership) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No organization found",
+      });
+    }
+
     // Cancel the subscription on Razorpay side too
-    if (user?.razorpaySubscriptionId) {
+    if (membership.organization.razorpaySubscriptionId) {
       try {
-        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, false);
+        await razorpay.subscriptions.cancel(membership.organization.razorpaySubscriptionId, false);
       } catch (e) {
         console.error("Failed to cancel Razorpay subscription:", e);
       }
     }
 
-    await prisma.user.update({
-      where: { id: ctx.session.user.id },
+    await prisma.organization.update({
+      where: { id: membership.organization.id },
       data: { autoRenew: false },
     });
     return { ok: true, autoRenew: false };
@@ -147,22 +183,29 @@ export const billingRouter = createTRPCRouter({
 
   downgradeToFree: protectedProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      select: { razorpaySubscriptionId: true },
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: ctx.session.user.id },
+      include: { organization: true },
     });
 
+    if (!membership) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No organization found",
+      });
+    }
+
     // Cancel the subscription on Razorpay side
-    if (user?.razorpaySubscriptionId) {
+    if (membership.organization.razorpaySubscriptionId) {
       try {
-        await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, false);
+        await razorpay.subscriptions.cancel(membership.organization.razorpaySubscriptionId, false);
       } catch (e) {
         console.error("Failed to cancel Razorpay subscription:", e);
       }
     }
 
-    await prisma.user.update({
-      where: { id: ctx.session.user.id },
+    await prisma.organization.update({
+      where: { id: membership.organization.id },
       data: {
         plan: "FREE",
         planStartedAt: null,

@@ -27,14 +27,10 @@ model User {
   tasks         Task[]    @relation("AssignedTasks")
   aiQueries     AIQuery[]
   contextLogs   ProjectContextLog[]
-  slackWorkspace SlackWorkspace?
 
-  plan                    String    @default("FREE") @map("plan")
-  razorpayCustomerId      String?   @map("razorpay_customer_id")
-  razorpaySubscriptionId  String?   @map("razorpay_subscription_id")
-  planStartedAt           DateTime? @map("plan_started_at")
-  planExpiresAt           DateTime? @map("plan_expires_at")
-  autoRenew               Boolean   @default(true) @map("auto_renew")
+  organizationId          String? @map("organization_id")
+  ownedOrganizations      Organization[] @relation("OrgOwner")
+  organizationMemberships OrganizationMember[]
 
   @@unique([email])
   @@map("user")
@@ -103,6 +99,42 @@ model AuthOtpRequest {
   @@map("auth_otp_request")
 }
 
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  ownerId       String    @map("owner_id")
+  owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, name: "OrgOwner")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt
+
+  members       OrganizationMember[]
+  projects      Project[]
+  slackWorkspace SlackWorkspace?
+
+  plan                    String    @default("FREE") @map("plan")
+  razorpayCustomerId      String?   @map("razorpay_customer_id")
+  razorpaySubscriptionId  String?   @map("razorpay_subscription_id")
+  planStartedAt           DateTime? @map("plan_started_at")
+  planExpiresAt           DateTime? @map("plan_expires_at")
+  autoRenew               Boolean   @default(true) @map("auto_renew")
+
+  @@map("organization")
+}
+
+model OrganizationMember {
+  id            String       @id @default(cuid())
+  organizationId String      @map("organization_id")
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId        String       @map("user_id")
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          String       @default("MEMBER")
+  joinedAt      DateTime     @default(now()) @map("joined_at")
+
+  @@unique([organizationId, userId])
+  @@map("organization_member")
+}
+
 enum ProjectRole {
   OWNER
   MEMBER
@@ -115,6 +147,8 @@ model Project {
   contextPlainText  String?   @map("context_plain_text")
   ownerId           String    @map("owner_id")
   owner             User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, name: "ProjectOwner")
+  organizationId    String    @map("organization_id")
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   slackChannelId    String    @map("slack_channel_id")
   slackChannelName  String    @map("slack_channel_name")
   syncTime          String    @map("sync_time")
@@ -266,18 +300,18 @@ model RateLimit {
 }
 
 model SlackWorkspace {
-  id               String   @id @default(cuid())
-  userId           String   @unique @map("user_id")
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspaceName    String   @map("workspace_name")
-  workspaceId      String?  @map("workspace_id")
-  clientIdEnc      String   @map("client_id_enc")
-  clientSecretEnc  String   @map("client_secret_enc")
-  signingSecretEnc String   @map("signing_secret_enc")
-  botTokenEnc      String   @map("bot_token_enc")
-  botUserId        String?  @map("bot_user_id")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id               String       @id @default(cuid())
+  organizationId   String       @unique @map("organization_id")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workspaceName    String       @map("workspace_name")
+  workspaceId      String?      @map("workspace_id")
+  clientIdEnc      String       @map("client_id_enc")
+  clientSecretEnc  String       @map("client_secret_enc")
+  signingSecretEnc String       @map("signing_secret_enc")
+  botTokenEnc      String       @map("bot_token_enc")
+  botUserId        String?      @map("bot_user_id")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   @@map("slack_workspaces")
 }

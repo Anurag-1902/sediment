@@ -7,6 +7,7 @@ import { aiRouter } from "./routers/ai";
 import { slackRouter } from "./routers/slack";
 import { slackWorkspaceRouter } from "./routers/slackWorkspace";
 import { billingRouter } from "./routers/billing";
+import { organizationRouter } from "./routers/organization";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   slack: slackRouter,
   slackWorkspace: slackWorkspaceRouter,
   billing: billingRouter,
+  organization: organizationRouter,
 });
 
 export type AppRouter = typeof appRouter;

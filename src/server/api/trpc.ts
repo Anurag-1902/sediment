@@ -62,22 +62,38 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 
 export const paidProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const prisma = await ctx.getPrisma();
-  const user = await prisma.user.findUnique({
-    where: { id: ctx.session.user.id },
-    select: { plan: true, planExpiresAt: true },
+  const userId = ctx.session.user.id;
+
+  // Get user's org membership
+  const membership = await prisma.organizationMember.findFirst({
+    where: { userId },
+    include: { organization: true },
   });
 
+  if (!membership) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "User is not part of any organization",
+    });
+  }
+
+  const org = membership.organization;
   const isActive =
-    user && user.plan !== "FREE" && user.planExpiresAt
-      ? new Date(user.planExpiresAt) > new Date()
+    org.plan !== "FREE" && org.planExpiresAt
+      ? new Date(org.planExpiresAt) > new Date()
       : false;
 
   if (!isActive) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "An active paid plan is required to perform this action.",
+      message: "Your organization does not have an active paid plan",
     });
   }
 
-  return next({ ctx });
+  return next({
+    ctx: {
+      ...ctx,
+      organizationId: org.id,
+    },
+  });
 });

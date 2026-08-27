@@ -27,27 +27,27 @@ export async function POST(req: Request) {
 
   switch (event.event) {
     case "subscription.charged": {
-      // Recurring payment succeeded — extend the user's plan
+      // Recurring payment succeeded — extend the org's plan
       const subscriptionId = event.payload?.subscription?.entity?.id;
       if (!subscriptionId) break;
 
-      const user = await prisma.user.findFirst({
+      const org = await prisma.organization.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
         select: { id: true, plan: true },
       });
 
-      if (user) {
+      if (org) {
         const now = new Date();
         const expiresAt = new Date(now);
-        // Check user's current plan to set correct expiry
-        if (user.plan === "STARTER") {
+        // Check org's current plan to set correct expiry
+        if (org.plan === "STARTER") {
           expiresAt.setDate(expiresAt.getDate() + 1);
         } else {
           expiresAt.setMonth(expiresAt.getMonth() + 1);
         }
 
-        await prisma.user.update({
-          where: { id: user.id },
+        await prisma.organization.update({
+          where: { id: org.id },
           data: {
             planStartedAt: now,
             planExpiresAt: expiresAt,
@@ -61,14 +61,14 @@ export async function POST(req: Request) {
       const subscriptionId = event.payload?.subscription?.entity?.id;
       if (!subscriptionId) break;
 
-      const user = await prisma.user.findFirst({
+      const org = await prisma.organization.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
         select: { id: true, plan: true },
       });
 
-      if (user) {
-        await prisma.user.update({
-          where: { id: user.id },
+      if (org) {
+        await prisma.organization.update({
+          where: { id: org.id },
           data: { autoRenew: false },
         });
       }
@@ -81,14 +81,14 @@ export async function POST(req: Request) {
       const subscriptionId = event.payload?.subscription?.entity?.id;
       if (!subscriptionId) break;
 
-      const user = await prisma.user.findFirst({
+      const org = await prisma.organization.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
         select: { id: true, plan: true },
       });
 
-      if (user) {
-        await prisma.user.update({
-          where: { id: user.id },
+      if (org) {
+        await prisma.organization.update({
+          where: { id: org.id },
           data: {
             plan: "FREE",
             autoRenew: false,

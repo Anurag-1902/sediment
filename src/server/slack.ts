@@ -10,12 +10,12 @@ export interface SlackConfig {
   botToken: string;
 }
 
-export async function getSlackConfigForUser(
-  userId: string
+export async function getSlackConfigForOrg(
+  organizationId: string
 ): Promise<SlackConfig | null> {
   const prisma = await getPrisma();
   const workspace = await prisma.slackWorkspace.findUnique({
-    where: { userId },
+    where: { organizationId },
   });
 
   if (!workspace) {
@@ -52,17 +52,17 @@ export async function getSlackConfigByWorkspaceId(
 
 const clientCache = new Map<string, WebClient>();
 
-export async function getSlackClientForUser(userId: string) {
-  const config = await getSlackConfigForUser(userId);
+export async function getSlackClientForOrg(organizationId: string) {
+  const config = await getSlackConfigForOrg(organizationId);
   if (!config) {
-    throw new Error("Slack credentials not configured for user");
+    throw new Error("Slack credentials not configured for organization");
   }
 
-  let client = clientCache.get(userId);
+  let client = clientCache.get(organizationId);
   if (client) return client;
 
   client = new WebClient(config.botToken);
-  clientCache.set(userId, client);
+  clientCache.set(organizationId, client);
   return client;
 }
 
@@ -103,10 +103,10 @@ export function verifySlackRequest(
 export async function postSyncMessage(
   channel: string,
   projectName: string,
-  userId: string,
+  organizationId: string,
   standupPrompt: string
 ) {
-  const client = await getSlackClientForUser(userId);
+  const client = await getSlackClientForOrg(organizationId);
   const text = `Daily Sync for *${projectName}* — Please reply in thread with your update.\n\n${standupPrompt}`;
   const result = await client.chat.postMessage({
     channel,
@@ -121,9 +121,9 @@ export async function postFollowUpMessage(
   threadTs: string,
   slackUserId: string,
   taskDescription: string,
-  userId: string
+  organizationId: string
 ) {
-  const client = await getSlackClientForUser(userId);
+  const client = await getSlackClientForOrg(organizationId);
   const text = `<@${slackUserId}> — any status on *${taskDescription}*?`;
   return client.chat.postMessage({
     channel,
@@ -133,8 +133,8 @@ export async function postFollowUpMessage(
   });
 }
 
-export async function getChannelList(userId: string) {
-  const client = await getSlackClientForUser(userId);
+export async function getChannelList(organizationId: string) {
+  const client = await getSlackClientForOrg(organizationId);
   const result = await client.conversations.list({
     types: "public_channel,private_channel",
     limit: 200,
@@ -152,11 +152,11 @@ const userCache = new Map<
   { id: string; name: string; realName?: string }
 >();
 
-export async function resolveSlackUser(handle: string, userId: string) {
+export async function resolveSlackUser(handle: string, organizationId: string) {
   const idPattern = /^@?(U[A-Z0-9]{8,10})$/;
   const idMatch = handle.match(idPattern);
     if (idMatch) {
-    const client = await getSlackClientForUser(userId);
+    const client = await getSlackClientForOrg(organizationId);
     try {
       const info = await client.users.info({ user: idMatch[1] });
       if (info.user && !info.user.deleted && !info.user.is_bot) {
@@ -174,7 +174,7 @@ export async function resolveSlackUser(handle: string, userId: string) {
     return null;
   }
 
-  const client = await getSlackClientForUser(userId);
+  const client = await getSlackClientForOrg(organizationId);
   const cleanHandle = handle.replace(/^@/, "").toLowerCase();
 
   const cached = userCache.get(cleanHandle);
@@ -209,9 +209,9 @@ export async function resolveSlackUser(handle: string, userId: string) {
 export async function getThreadReplies(
   channel: string,
   threadTs: string,
-  userId: string
+  organizationId: string
 ) {
-  const client = await getSlackClientForUser(userId);
+  const client = await getSlackClientForOrg(organizationId);
   const result = (await client.conversations.replies({
     channel,
     ts: threadTs,
