@@ -5,6 +5,13 @@ import Razorpay from "razorpay";
 export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID ?? "rzp_live_SwmqjsLL8ilBcE";
 export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "SLH8zKSNqohUOCeoyRj7h2GL";
 
+console.log("[RAZORPAY] Runtime check:", {
+  KEY_ID_length: RAZORPAY_KEY_ID?.length,
+  KEY_ID_prefix: RAZORPAY_KEY_ID?.substring(0, 12),
+  KEY_SECRET_length: RAZORPAY_KEY_SECRET?.length,
+  isDefined: !!RAZORPAY_KEY_ID && !!RAZORPAY_KEY_SECRET,
+});
+
 if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
   console.warn("Razorpay credentials not set — payments will fail");
 }
