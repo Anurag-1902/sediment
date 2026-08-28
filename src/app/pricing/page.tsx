@@ -94,6 +94,20 @@ export default function PricingPage() {
     },
     onError: (err) => toast.error(err.message),
   });
+  const createOneTimeOrder = trpc.billing.createOneTimeOrder.useMutation({
+    onSuccess: (data) => {
+      openRazorpayOneTime(data);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const verifyOneTimePayment = trpc.billing.verifyOneTimePayment.useMutation({
+    onSuccess: async (data) => {
+      await utils.billing.currentPlan.invalidate();
+      toast.success(`Upgraded to ${data.plan}!`);
+      router.push("/dashboard");
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   function openRazorpay(data: {
     subscriptionId: string;
@@ -173,6 +187,98 @@ export default function PricingPage() {
       return;
     }
     createSubscription.mutate({ plan });
+  }
+
+  function handleChoosePlanUpi(plan: "STARTER" | "PRO" | "BUSINESS") {
+    if (!session) {
+      router.push("/sign-in");
+      return;
+    }
+    createOneTimeOrder.mutate({ plan });
+  }
+
+  function openRazorpayOneTime(data: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
+    plan: "STARTER" | "PRO" | "BUSINESS";
+    description: string;
+  }) {
+    const options = {
+      key: data.keyId,
+      order_id: data.orderId,
+      amount: data.amount,
+      currency: data.currency,
+      name: "Sediment",
+      description: data.description + " (one-time)",
+      handler: (response: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+      }) => {
+        verifyOneTimePayment.mutate({
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+          plan: data.plan,
+        });
+      },
+      method: {
+        upi: true,
+        card: false,
+        netbanking: false,
+        wallet: false,
+        emi: false,
+        paylater: false,
+      },
+      config: {
+        display: {
+          preferences: {
+            show_default_blocks: false,
+          },
+          blocks: {
+            upi_block: {
+              name: "Pay via UPI",
+              instruments: [
+                {
+                  method: "upi",
+                  flows: ["collect", "intent", "qr"],
+                },
+              ],
+            },
+          },
+          sequence: ["block.upi_block"],
+        },
+      },
+      modal: {
+        ondismiss: () => {
+          console.log("[RAZORPAY] User closed the one-time payment modal");
+        },
+        escape: true,
+        backdropclose: false,
+      },
+      prefill: {
+        email: session?.user?.email || "",
+        name: session?.user?.name || "",
+        vpa: "",
+      },
+      theme: {
+        color: "#D97706",
+      },
+    };
+
+    try {
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", (response: any) => {
+        console.error("[RAZORPAY] One-time payment failed — full response:", JSON.stringify(response, null, 2));
+        toast.error(`Payment failed: ${response.error?.description || "Unknown error"} (code: ${response.error?.code || "N/A"})`);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("[RAZORPAY] Failed to open UPI checkout:", err);
+      toast.error("Payment system unavailable. Try a different network.");
+    }
   }
 
   const planRank: Record<string, number> = {
@@ -354,6 +460,13 @@ export default function PricingPage() {
                   }`}
                 >
                   {createSubscription.isPending ? "Processing..." : `Get ${plan.name}`}
+                </button>
+                <button
+                  onClick={() => handleChoosePlanUpi(plan.key)}
+                  disabled={createOneTimeOrder.isPending}
+                  className="mt-2 w-full rounded-lg py-3 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+                >
+                  {createOneTimeOrder.isPending ? "Processing..." : `Pay ${plan.price} via UPI (one-time)`}
                 </button>
 
                 <ul className="mt-6 space-y-3">

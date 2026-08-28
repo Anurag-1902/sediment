@@ -200,6 +200,147 @@ export const billingRouter = createTRPCRouter({
       return { ok: true, plan: input.plan };
     }),
 
+  createOneTimeOrder: protectedProcedure
+    .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+      let membership = await prisma.organizationMember.findFirst({
+        where: { userId },
+      });
+
+      // Auto-create organization if none exists (same logic as createSubscription)
+      if (!membership) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+        const slug = user.name?.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now() || "org-" + Date.now();
+        const org = await prisma.organization.create({
+          data: {
+            name: user.name ? `${user.name}'s Organization` : "My Organization",
+            slug,
+            ownerId: userId,
+          },
+        });
+        membership = await prisma.organizationMember.create({
+          data: {
+            organizationId: org.id,
+            userId,
+            role: "MANAGER",
+          },
+        });
+        await prisma.user.update({
+          where: { id: userId },
+          data: { organizationId: org.id },
+        });
+      }
+
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can manage billing",
+        });
+      }
+
+      const config = PLAN_CONFIG[input.plan];
+
+      try {
+        const order = await razorpay.orders.create({
+          amount: config.amount,
+          currency: config.currency,
+          receipt: `rcpt_${userId.substring(0, 8)}_${Date.now()}`,
+          notes: {
+            userId,
+            plan: input.plan,
+            type: "one_time",
+          },
+        });
+
+        return {
+          orderId: order.id,
+          amount: config.amount,
+          currency: config.currency,
+          keyId: RAZORPAY_KEY_ID,
+          plan: input.plan,
+          description: config.description,
+        };
+      } catch (err: any) {
+        console.error("[BILLING] One-time order creation failed:", err?.error || err);
+        const message =
+          err?.error?.description ||
+          err?.message ||
+          "Failed to create order. Please try again.";
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      }
+    }),
+
+  verifyOneTimePayment: protectedProcedure
+    .input(
+      z.object({
+        razorpayOrderId: z.string(),
+        razorpayPaymentId: z.string(),
+        razorpaySignature: z.string(),
+        plan: z.enum(["STARTER", "PRO", "BUSINESS"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const crypto = await import("crypto");
+      // For orders, signature is: orderId + "|" + paymentId (different from subscriptions!)
+      const body = input.razorpayOrderId + "|" + input.razorpayPaymentId;
+      const expectedSignature = crypto
+        .createHmac("sha256", RAZORPAY_KEY_SECRET)
+        .update(body)
+        .digest("hex");
+
+      if (expectedSignature !== input.razorpaySignature) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Payment verification failed",
+        });
+      }
+
+      const now = new Date();
+      const expiresAt = new Date(now);
+      if (input.plan === "STARTER") {
+        expiresAt.setDate(expiresAt.getDate() + 1);
+      } else {
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
+
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId: ctx.session.user.id },
+        include: { organization: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No organization found",
+        });
+      }
+
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can manage billing",
+        });
+      }
+
+      await prisma.organization.update({
+        where: { id: membership.organization.id },
+        data: {
+          plan: input.plan,
+          planStartedAt: now,
+          planExpiresAt: expiresAt,
+          autoRenew: false,  // one-time payment = no auto-renew
+        },
+      });
+
+      return { ok: true, plan: input.plan };
+    }),
+
   currentPlan: protectedProcedure.query(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const membership = await prisma.organizationMember.findFirst({
