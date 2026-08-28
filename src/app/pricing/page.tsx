@@ -120,6 +120,13 @@ export default function PricingPage() {
           plan: data.plan,
         });
       },
+      modal: {
+        ondismiss: () => {
+          console.log("[RAZORPAY] User closed the payment modal");
+        },
+        escape: true,
+        backdropclose: false,
+      },
       prefill: {
         email: session?.user?.email || "",
         name: session?.user?.name || "",
@@ -129,8 +136,19 @@ export default function PricingPage() {
       },
     };
 
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+    try {
+      const rzp = new (window as any).Razorpay(options);
+      
+      rzp.on("payment.failed", (response: any) => {
+        console.error("[RAZORPAY] Payment failed:", response.error);
+        toast.error(`Payment failed: ${response.error?.description || "Unknown error"}`);
+      });
+      
+      rzp.open();
+    } catch (err) {
+      console.error("[RAZORPAY] Failed to open checkout:", err);
+      toast.error("Payment system unavailable. This may be due to network restrictions. Try using mobile data or a different network.");
+    }
   }
 
   function handleChoosePlan(plan: "STARTER" | "PRO" | "BUSINESS") {
