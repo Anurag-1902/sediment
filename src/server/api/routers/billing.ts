@@ -6,8 +6,8 @@ import { hasPermission } from "../rbac";
 
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  retries = 3,
-  delay = 2000
+  retries = 1,
+  delay = 1000
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -16,8 +16,8 @@ async function retryWithBackoff<T>(
     } catch (err: any) {
       lastError = err;
       const statusCode = err?.statusCode || err?.response?.status;
-      // Retry on 502, 503, 504 (gateway errors) and network timeouts
-      const isRetryable = statusCode === 502 || statusCode === 503 || statusCode === 504 || statusCode === undefined;
+      // Only retry on gateway errors
+      const isRetryable = statusCode === 502 || statusCode === 503 || statusCode === 504;
       if (!isRetryable || attempt >= retries) {
         throw err;
       }

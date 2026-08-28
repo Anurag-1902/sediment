@@ -1,9 +1,7 @@
 import Razorpay from "razorpay";
 
-// Temporarily hardcoded test keys for development
-// TODO: Move these to environment variables before going live
-export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_TV8kDaqQQxhcT5";
-export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "d1la8OkfoeypPQjb35ojLS7f";
+export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID ?? "";
+export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "";
 
 if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
   console.warn("Razorpay credentials not set — payments will fail");
@@ -60,33 +58,28 @@ export const PLAN_CONFIG = {
   },
 } as const;
 
-// Cache for Razorpay Plan IDs — created on first use
+const PLAN_ID_ENV_MAP: Record<string, string> = {
+  STARTER: "RAZORPAY_PLAN_ID_STARTER",
+  PRO: "RAZORPAY_PLAN_ID_PRO",
+  BUSINESS: "RAZORPAY_PLAN_ID_BUSINESS",
+};
+
 const planIdCache: Record<string, string> = {};
 
 export async function getOrCreateRazorpayPlan(
   planKey: "STARTER" | "PRO" | "BUSINESS"
 ): Promise<string> {
-  if (planIdCache[planKey]) {
-    return planIdCache[planKey];
+  if (planIdCache[planKey]) return planIdCache[planKey];
+
+  // Prefer env-var plan IDs (no API call needed)
+  const envId = process.env[PLAN_ID_ENV_MAP[planKey]];
+  if (envId) {
+    planIdCache[planKey] = envId;
+    return envId;
   }
 
+  // Fallback: create the plan (one-time)
   const config = PLAN_CONFIG[planKey];
-
-  // Check if plan already exists by listing plans
-  const existingPlans = await razorpay.plans.all({ count: 100 });
-  const existing = (existingPlans as any).items?.find(
-    (p: any) =>
-      p.item?.name === config.name &&
-      p.item?.amount === config.amount &&
-      p.period === config.period
-  );
-
-  if (existing) {
-    planIdCache[planKey] = existing.id;
-    return existing.id;
-  }
-
-  // Create new plan
   const plan = await razorpay.plans.create({
     period: config.period,
     interval: config.interval,
@@ -99,5 +92,6 @@ export async function getOrCreateRazorpayPlan(
   });
 
   planIdCache[planKey] = plan.id;
+  console.log(`[RAZORPAY] Created plan ${planKey} → ${plan.id}. Set ${PLAN_ID_ENV_MAP[planKey]}=${plan.id} in .env to skip this next time.`);
   return plan.id;
 }
