@@ -4,6 +4,31 @@ import { razorpay, PLAN_CONFIG, getOrCreateRazorpayPlan } from "../../razorpay";
 import { TRPCError } from "@trpc/server";
 import { hasPermission } from "../rbac";
 
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delay = 2000
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const statusCode = err?.statusCode || err?.response?.status;
+      // Retry on 502, 503, 504 (gateway errors) and network timeouts
+      const isRetryable = statusCode === 502 || statusCode === 503 || statusCode === 504 || statusCode === undefined;
+      if (!isRetryable || attempt >= retries) {
+        throw err;
+      }
+      console.warn(`[BILLING] Razorpay request failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms...`, err?.error?.description || err?.message);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+  throw lastError;
+}
+
 export const billingRouter = createTRPCRouter({
   createSubscription: protectedProcedure
     .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
@@ -23,18 +48,20 @@ export const billingRouter = createTRPCRouter({
       }
 
       try {
-        const planId = await getOrCreateRazorpayPlan(input.plan);
+        const planId = await retryWithBackoff(() => getOrCreateRazorpayPlan(input.plan));
         const config = PLAN_CONFIG[input.plan];
 
-        const subscription = await razorpay.subscriptions.create({
-          plan_id: planId,
-          total_count: input.plan === "STARTER" ? 4 : 12,
-          customer_notify: 1,
-          notes: {
-            userId: ctx.session.user.id,
-            plan: input.plan,
-          },
-        } as any);
+        const subscription = await retryWithBackoff(async () => {
+          return razorpay.subscriptions.create({
+            plan_id: planId,
+            total_count: input.plan === "STARTER" ? 4 : 12,
+            customer_notify: 1,
+            notes: {
+              userId: ctx.session.user.id,
+              plan: input.plan,
+            },
+          } as any);
+        });
 
         return {
           subscriptionId: subscription.id,
@@ -46,7 +73,7 @@ export const billingRouter = createTRPCRouter({
           description: config.description,
         };
       } catch (err: any) {
-        console.error("Razorpay subscription creation failed:", err?.error || err);
+        console.error("Razorpay subscription creation failed after retries:", err?.error || err);
         const message =
           err?.error?.description ||
           err?.message ||
