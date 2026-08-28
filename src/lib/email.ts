@@ -1,3 +1,9 @@
+import { Resend } from "resend";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@sediment.dev";
+
 export async function sendInviteEmail({
   to,
   inviterName,
@@ -29,21 +35,27 @@ export async function sendInviteEmail({
   `;
 
   try {
-    // Attempt to use email service if available
-    const emailServices = await import("@krutai/email-services").catch(() => null);
-    if (emailServices && (emailServices as any).emailServices?.send) {
-      await (emailServices as any).emailServices.send({ to, subject, html });
-      return { ok: true };
+    if (!resend) {
+      console.warn("[EMAIL] RESEND_API_KEY not set. Invite email prepared but not sent.");
+      console.log(`  To: ${to} | Accept URL: ${acceptUrl}`);
+      return { ok: true, skipped: true };
     }
 
-    // Fallback: log the invite for now (email service not configured with OAuth tokens)
-    console.log("[EMAIL] Invite email prepared:");
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Accept URL: ${acceptUrl}`);
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    });
+
+    if (result.error) {
+      console.error("[EMAIL] Resend error:", result.error);
+      return { ok: false, error: result.error.message };
+    }
+
     return { ok: true };
   } catch (err) {
-    console.error("Failed to send invite email:", err);
+    console.error("[EMAIL] Failed to send invite email:", err);
     return { ok: false, error: String(err) };
   }
 }
