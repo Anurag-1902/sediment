@@ -1,9 +1,16 @@
 import { getPrisma } from "@/lib/krutai-server";
 import { summarizeUpdate, extractTasks } from "@/server/ai";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const requestHeaders = await headers();
+  const secret = requestHeaders.get("x-cron-secret");
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const steps: any[] = [];
   try {
     const prisma = await getPrisma();

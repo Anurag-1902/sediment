@@ -1,9 +1,16 @@
 import { getPrisma } from "@/lib/krutai-server";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  const requestHeaders = await headers();
+  const secret = requestHeaders.get("x-cron-secret");
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const prisma = await getPrisma();
   const url = new URL(req.url);
   const deactivateId = url.searchParams.get("deactivate");
@@ -32,6 +39,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const requestHeaders = await headers();
+  const secret = requestHeaders.get("x-cron-secret");
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { projectId } = await req.json();
   if (!projectId) {
     return NextResponse.json({ error: "projectId required" }, { status: 400 });
