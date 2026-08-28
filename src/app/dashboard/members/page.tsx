@@ -254,6 +254,17 @@ export default function MembersPage() {
                 {canManage && (
                   <div className="flex gap-2">
                     <button
+                      onClick={() => {
+                        const baseUrl = window.location.origin;
+                        const link = `${baseUrl}/invite/${invite.token}`;
+                        navigator.clipboard.writeText(link);
+                        toast.success("Invite link copied!");
+                      }}
+                      className="text-xs font-medium px-3 py-1 rounded border border-amber/30 text-amber hover:bg-amber/10 transition-colors"
+                    >
+                      Copy Link
+                    </button>
+                    <button
                       onClick={() => resendInvite.mutate({ inviteId: invite.id })}
                       disabled={resendInvite.isPending}
                       className="text-xs font-medium px-3 py-1 rounded border border-border-custom hover:bg-surface-raised transition-colors"
