@@ -203,49 +203,54 @@ export const billingRouter = createTRPCRouter({
   createOneTimeOrder: protectedProcedure
     .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
-      const prisma = await ctx.getPrisma();
-      const userId = ctx.session.user.id;
-      let membership = await prisma.organizationMember.findFirst({
-        where: { userId },
-      });
-
-      // Auto-create organization if none exists (same logic as createSubscription)
-      if (!membership) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-        }
-        const slug = user.name?.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now() || "org-" + Date.now();
-        const org = await prisma.organization.create({
-          data: {
-            name: user.name ? `${user.name}'s Organization` : "My Organization",
-            slug,
-            ownerId: userId,
-          },
-        });
-        membership = await prisma.organizationMember.create({
-          data: {
-            organizationId: org.id,
-            userId,
-            role: "MANAGER",
-          },
-        });
-        await prisma.user.update({
-          where: { id: userId },
-          data: { organizationId: org.id },
-        });
-      }
-
-      if (!hasPermission(membership.role as any, "canManageBilling")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only managers can manage billing",
-        });
-      }
-
-      const config = PLAN_CONFIG[input.plan];
-
       try {
+        console.log("[BILLING] createOneTimeOrder called with plan:", input.plan);
+        const prisma = await ctx.getPrisma();
+        const userId = ctx.session.user.id;
+        
+        let membership = await prisma.organizationMember.findFirst({
+          where: { userId },
+        });
+
+        // Auto-create organization if none exists (same logic as createSubscription)
+        if (!membership) {
+          console.log("[BILLING] No membership found, auto-creating org for user:", userId);
+          const user = await prisma.user.findUnique({ where: { id: userId } });
+          if (!user) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+          }
+          const slug = user.name?.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now() || "org-" + Date.now();
+          const org = await prisma.organization.create({
+            data: {
+              name: user.name ? `${user.name}'s Organization` : "My Organization",
+              slug,
+              ownerId: userId,
+            },
+          });
+          membership = await prisma.organizationMember.create({
+            data: {
+              organizationId: org.id,
+              userId,
+              role: "MANAGER",
+            },
+          });
+          await prisma.user.update({
+            where: { id: userId },
+            data: { organizationId: org.id },
+          });
+          console.log("[BILLING] Created org:", org.id, "with member:", membership.id);
+        }
+
+        if (!hasPermission(membership.role as any, "canManageBilling")) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only managers can manage billing",
+          });
+        }
+
+        const config = PLAN_CONFIG[input.plan];
+        console.log("[BILLING] Creating order with config:", { amount: config.amount, currency: config.currency });
+
         const order = await razorpay.orders.create({
           amount: config.amount,
           currency: config.currency,
@@ -257,6 +262,8 @@ export const billingRouter = createTRPCRouter({
           },
         });
 
+        console.log("[BILLING] Order created:", order.id);
+
         return {
           orderId: order.id,
           amount: config.amount,
@@ -266,9 +273,28 @@ export const billingRouter = createTRPCRouter({
           description: config.description,
         };
       } catch (err: any) {
-        console.error("[BILLING] One-time order creation failed:", err?.error || err);
+        // Log EVERYTHING about the error
+        console.error("[BILLING] ==================================================");
+        console.error("[BILLING] ONE-TIME ORDER CREATION FAILED");
+        console.error("[BILLING] Error type:", typeof err);
+        console.error("[BILLING] Error instanceof Error:", err instanceof Error);
+        console.error("[BILLING] Error keys:", Object.keys(err || {}));
+        console.error("[BILLING] Error statusCode:", err?.statusCode);
+        console.error("[BILLING] Error status:", err?.status);
+        console.error("[BILLING] Error.code:", err?.code);
+        console.error("[BILLING] Error.message:", err?.message);
+        console.error("[BILLING] Error.description:", err?.error?.description);
+        console.error("[BILLING] Error.reason:", err?.error?.reason);
+        console.error("[BILLING] Error.raw:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+        console.error("[BILLING] Key ID prefix:", RAZORPAY_KEY_ID?.substring(0, 12));
+        console.error("[BILLING] Key ID is test:", RAZORPAY_KEY_ID?.startsWith("rzp_test_"));
+        console.error("[BILLING] Key ID is live:", RAZORPAY_KEY_ID?.startsWith("rzp_live_"));
+        console.error("[BILLING] Secret is empty:", !RAZORPAY_KEY_SECRET);
+        console.error("[BILLING] ==================================================");
+        
         const message =
           err?.error?.description ||
+          err?.error?.reason ||
           err?.message ||
           "Failed to create order. Please try again.";
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
