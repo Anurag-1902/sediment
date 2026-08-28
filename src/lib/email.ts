@@ -50,7 +50,7 @@ export async function sendInviteEmail({
 
   try {
     const result = await resend.emails.send({
-      from: "Sediment <noreply@sediment.app>",
+      from: "Sediment <onboarding@resend.dev>",
       to,
       subject,
       html,
