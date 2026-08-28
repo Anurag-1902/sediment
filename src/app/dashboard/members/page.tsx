@@ -29,16 +29,21 @@ export default function MembersPage() {
   const utils = trpc.useUtils();
   const { data: members, isLoading } = trpc.organization.listMembers.useQuery();
   const { data: currentRole } = trpc.organization.currentUserRole.useQuery();
+  const { data: pendingInvites } = trpc.organization.listPendingInvites.useQuery();
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("EMPLOYEE");
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const inviteMember = trpc.organization.inviteMember.useMutation({
-    onSuccess: () => {
-      toast.success("Member invited!");
+    onSuccess: (data) => {
+      if (data.emailSent) {
+        toast.success("Invite email sent!");
+      } else {
+        toast.warning("Invite created but email failed. You can resend it below.");
+      }
       setInviteEmail("");
-      utils.organization.listMembers.invalidate();
+      utils.organization.listPendingInvites.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -61,6 +66,19 @@ export default function MembersPage() {
       toast.error(err.message);
       setConfirmRemoveId(null);
     },
+  });
+
+  const cancelInvite = trpc.organization.cancelInvite.useMutation({
+    onSuccess: () => {
+      toast.success("Invite cancelled");
+      utils.organization.listPendingInvites.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const resendInvite = trpc.organization.resendInvite.useMutation({
+    onSuccess: () => toast.success("Invite email resent"),
+    onError: (err) => toast.error(err.message),
   });
 
   const canManage = currentRole?.role === "MANAGER" || currentRole?.role === "ADMIN";
@@ -123,7 +141,7 @@ export default function MembersPage() {
                 </Button>
               </div>
               <p className="text-xs text-text-muted">
-                The person must already have a Sediment account. They'll be added to your organization immediately.
+                The person must already have a Sediment account. They&apos;ll receive an email invite and can accept it to join your team.
               </p>
             </form>
           </CardContent>
@@ -213,6 +231,47 @@ export default function MembersPage() {
           ))}
         </CardContent>
       </Card>
+
+      {pendingInvites && pendingInvites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Invites ({pendingInvites.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingInvites.map((invite) => (
+              <div
+                key={invite.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-border-custom"
+              >
+                <div>
+                  <p className="font-medium text-text">{invite.invitedEmail}</p>
+                  <p className="text-xs text-text-muted">
+                    Invited as {invite.role} · Expires {new Date(invite.expiresAt).toLocaleDateString()}
+                  </p>
+                </div>
+                {canManage && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => resendInvite.mutate({ inviteId: invite.id })}
+                      disabled={resendInvite.isPending}
+                      className="text-xs font-medium px-3 py-1 rounded border border-border-custom hover:bg-surface-raised transition-colors"
+                    >
+                      Resend
+                    </button>
+                    <button
+                      onClick={() => cancelInvite.mutate({ inviteId: invite.id })}
+                      disabled={cancelInvite.isPending}
+                      className="text-xs font-medium px-3 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
