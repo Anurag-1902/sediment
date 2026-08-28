@@ -139,14 +139,14 @@ export const billingRouter = createTRPCRouter({
     });
 
     if (!membership) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "No organization found" });
-    }
-
-    if (!hasPermission(membership.role as any, "canViewBilling")) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You don't have permission to view billing details",
-      });
+      return {
+        plan: "FREE",
+        startedAt: null,
+        expiresAt: null,
+        autoRenew: false,
+        subscriptionId: null,
+        isActive: false,
+      };
     }
 
     const org = membership?.organization;

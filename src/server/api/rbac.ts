@@ -75,21 +75,29 @@ export const ROLE_PERMISSIONS = {
   },
 } as const;
 
+// Map legacy role strings to new OrgRole values
+const LEGACY_ROLE_MAP: Record<string, OrgRole> = {
+  OWNER: "MANAGER",
+  MEMBER: "EMPLOYEE",
+};
+
 export function hasPermission(
-  role: OrgRole,
+  role: OrgRole | string,
   permission: keyof typeof ROLE_PERMISSIONS.MANAGER
 ): boolean {
-  return ROLE_PERMISSIONS[role]?.[permission] ?? false;
+  const resolvedRole = LEGACY_ROLE_MAP[role as string] ?? role;
+  return ROLE_PERMISSIONS[resolvedRole as OrgRole]?.[permission] ?? false;
 }
 
 export function requirePermission(
-  role: OrgRole,
+  role: OrgRole | string,
   permission: keyof typeof ROLE_PERMISSIONS.MANAGER
 ) {
   if (!hasPermission(role, permission)) {
+    const resolvedRole = LEGACY_ROLE_MAP[role as string] ?? role;
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: `Your role (${role}) does not have permission to perform this action.`,
+      message: `Your role (${resolvedRole}) does not have permission to perform this action.`,
     });
   }
 }
