@@ -137,11 +137,27 @@ export default function PricingPage() {
     };
 
     try {
+      console.log("[RAZORPAY] Opening checkout with:", {
+        keyIdPrefix: data.keyId?.substring(0, 12),
+        keyIdIsTest: data.keyId?.startsWith("rzp_test_"),
+        keyIdIsLive: data.keyId?.startsWith("rzp_live_"),
+        subscriptionId: data.subscriptionId,
+        amount: data.amount,
+        plan: data.plan,
+      });
       const rzp = new (window as any).Razorpay(options);
       
       rzp.on("payment.failed", (response: any) => {
-        console.error("[RAZORPAY] Payment failed:", response.error);
-        toast.error(`Payment failed: ${response.error?.description || "Unknown error"}`);
+        console.error("[RAZORPAY] Payment failed — full response:", JSON.stringify(response, null, 2));
+        console.error("[RAZORPAY] Error details:", {
+          code: response.error?.code,
+          description: response.error?.description,
+          source: response.error?.source,
+          step: response.error?.step,
+          reason: response.error?.reason,
+          metadata: response.error?.metadata,
+        });
+        toast.error(`Payment failed: ${response.error?.description || "Unknown error"} (code: ${response.error?.code || "N/A"})`);
       });
       
       rzp.open();

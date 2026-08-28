@@ -89,6 +89,18 @@ export const billingRouter = createTRPCRouter({
           } as any);
         });
 
+        console.log("[BILLING] Subscription created successfully:", {
+          subscriptionId: subscription.id,
+          status: subscription.status,
+          planId,
+          keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 12),
+          keyIdIsTest: RAZORPAY_KEY_ID.startsWith("rzp_test_"),
+          keyIdIsLive: RAZORPAY_KEY_ID.startsWith("rzp_live_"),
+          totalCount: input.plan === "STARTER" ? 4 : 12,
+          plan: input.plan,
+          createdAt: new Date().toISOString(),
+        });
+
         return {
           subscriptionId: subscription.id,
           planId,
@@ -99,7 +111,21 @@ export const billingRouter = createTRPCRouter({
           description: config.description,
         };
       } catch (err: any) {
-        console.error("Razorpay subscription creation failed after retries:", err?.error || err);
+        const errorDetails = {
+          statusCode: err?.statusCode,
+          errorCode: err?.error?.code,
+          errorDescription: err?.error?.description,
+          errorReason: err?.error?.reason,
+          errorSource: err?.error?.source,
+          errorStep: err?.error?.step,
+          errorMetadata: err?.error?.metadata,
+          rawMessage: err?.message,
+          keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 12),
+          keyIdIsTest: RAZORPAY_KEY_ID.startsWith("rzp_test_"),
+          keyIdIsLive: RAZORPAY_KEY_ID.startsWith("rzp_live_"),
+          plan: input.plan,
+        };
+        console.error("[BILLING] Razorpay subscription creation failed:", JSON.stringify(errorDetails, null, 2));
         const message =
           err?.error?.description ||
           err?.message ||
