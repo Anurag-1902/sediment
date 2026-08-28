@@ -34,12 +34,38 @@ export const billingRouter = createTRPCRouter({
     .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
-      const membership = await prisma.organizationMember.findFirst({
-        where: { userId: ctx.session.user.id },
+      const userId = ctx.session.user.id;
+      let membership = await prisma.organizationMember.findFirst({
+        where: { userId },
       });
+
+      // Auto-create organization if none exists
       if (!membership) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "No organization found" });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+        const slug = user.name?.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now() || "org-" + Date.now();
+        const org = await prisma.organization.create({
+          data: {
+            name: user.name ? `${user.name}'s Organization` : "My Organization",
+            slug,
+            ownerId: userId,
+          },
+        });
+        membership = await prisma.organizationMember.create({
+          data: {
+            organizationId: org.id,
+            userId,
+            role: "MANAGER",
+          },
+        });
+        await prisma.user.update({
+          where: { id: userId },
+          data: { organizationId: org.id },
+        });
       }
+
       if (!hasPermission(membership.role as any, "canManageBilling")) {
         throw new TRPCError({
           code: "FORBIDDEN",
