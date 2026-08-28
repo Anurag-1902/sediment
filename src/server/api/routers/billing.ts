@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { razorpay, PLAN_CONFIG, getOrCreateRazorpayPlan } from "../../razorpay";
+import { razorpay, PLAN_CONFIG, getOrCreateRazorpayPlan, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from "../../razorpay";
 import { TRPCError } from "@trpc/server";
 import { hasPermission } from "../rbac";
 
@@ -94,7 +94,7 @@ export const billingRouter = createTRPCRouter({
           planId,
           amount: config.amount,
           currency: config.currency,
-          keyId: process.env.RAZORPAY_KEY_ID!,
+          keyId: RAZORPAY_KEY_ID,
           plan: input.plan,
           description: config.description,
         };
@@ -122,7 +122,7 @@ export const billingRouter = createTRPCRouter({
       const crypto = await import("crypto");
       const body = input.razorpayPaymentId + "|" + input.razorpaySubscriptionId;
       const expectedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
+        .createHmac("sha256", RAZORPAY_KEY_SECRET)
         .update(body)
         .digest("hex");
 

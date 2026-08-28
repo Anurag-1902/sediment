@@ -2,8 +2,8 @@ import Razorpay from "razorpay";
 
 // Temporarily hardcoded test keys for development
 // TODO: Move these to environment variables before going live
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_TV8kDaqQQxhcT5";
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "d1la8OkfoeypPQjb35ojLS7f";
+export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_TV8kDaqQQxhcT5";
+export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "d1la8OkfoeypPQjb35ojLS7f";
 
 if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
   console.warn("Razorpay credentials not set — payments will fail");
