@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, paidProcedure, protectedProcedure } from "../trpc";
 import { resolveSlackUser } from "@/server/slack";
+import { hasPermission } from "../rbac";
 
 export const projectRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -92,6 +93,20 @@ export const projectRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
       const organizationId = ctx.organizationId;
 
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canManageProjects")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to manage projects",
+        });
+      }
+
       const resolvedMembers = [];
       for (const handle of memberHandles) {
         const user = await resolveSlackUser(handle, organizationId);
@@ -152,6 +167,20 @@ export const projectRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
 
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: existing.organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canManageProjects")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to manage projects",
+        });
+      }
+
       if (memberHandles !== undefined) {
         const resolvedMembers = [];
         for (const handle of memberHandles) {
@@ -198,6 +227,21 @@ export const projectRouter = createTRPCRouter({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
+
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: existing.organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canDeleteProjects")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to delete projects",
+        });
+      }
+
       await prisma.project.update({
         where: { id: input.id },
         data: { isActive: false },
@@ -216,6 +260,21 @@ export const projectRouter = createTRPCRouter({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
+
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: existing.organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canManageProjects")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to manage projects",
+        });
+      }
+
       await prisma.project.update({
         where: { id: input.id },
         data: { isActive: true },
@@ -233,6 +292,20 @@ export const projectRouter = createTRPCRouter({
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: existing.organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canDeleteProjects")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to delete projects",
+        });
       }
 
       // Explicitly delete child records in dependency order, then the project.

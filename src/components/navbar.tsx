@@ -25,8 +25,14 @@ export function Navbar() {
   const isDashboard = pathname?.startsWith("/dashboard");
   const { data: planData } = trpc.billing.currentPlan.useQuery(undefined, {
     retry: false,
+    enabled: !!session,
+  });
+  const { data: currentRole } = trpc.organization.currentUserRole.useQuery(undefined, {
+    enabled: !!session,
   });
   const activePlan = planData?.isActive ? planData.plan : null;
+
+  const canViewBilling = currentRole?.role === "MANAGER" || currentRole?.role === "ACCOUNTANT" || currentRole?.role === "FINANCE";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border-custom bg-charcoal/80 backdrop-blur-xl">
@@ -51,12 +57,19 @@ export function Navbar() {
               {activePlan === "BUSINESS" ? "Business" : activePlan === "PRO" ? "Pro" : "Starter"}
             </span>
           )}
+          {currentRole?.role && (
+            <span className="text-[10px] text-text-muted uppercase tracking-wider ml-1">
+              {currentRole.role}
+            </span>
+          )}
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
           <Link href="/features" className="text-sm text-text-muted hover:text-text transition-colors">Features</Link>
           <Link href="/about" className="text-sm text-text-muted hover:text-text transition-colors">About</Link>
-          <Link href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors">Pricing</Link>
+          {canViewBilling && (
+            <Link href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors">Pricing</Link>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -95,6 +108,11 @@ export function Navbar() {
                         <p className="text-xs leading-none text-text-muted">
                           {user?.email}
                         </p>
+                        {currentRole?.role && (
+                          <p className="text-[10px] leading-none text-text-muted uppercase tracking-wider mt-1">
+                            {currentRole.role}
+                          </p>
+                        )}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-border-custom" />

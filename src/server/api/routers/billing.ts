@@ -2,11 +2,26 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { razorpay, PLAN_CONFIG, getOrCreateRazorpayPlan } from "../../razorpay";
 import { TRPCError } from "@trpc/server";
+import { hasPermission } from "../rbac";
 
 export const billingRouter = createTRPCRouter({
   createSubscription: protectedProcedure
     .input(z.object({ plan: z.enum(["STARTER", "PRO", "BUSINESS"]) }))
     .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId: ctx.session.user.id },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No organization found" });
+      }
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can manage billing",
+        });
+      }
+
       try {
         const planId = await getOrCreateRazorpayPlan(input.plan);
         const config = PLAN_CONFIG[input.plan];
@@ -85,6 +100,13 @@ export const billingRouter = createTRPCRouter({
         });
       }
 
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can manage billing",
+        });
+      }
+
       await prisma.organization.update({
         where: { id: membership.organization.id },
         data: {
@@ -115,6 +137,18 @@ export const billingRouter = createTRPCRouter({
         },
       },
     });
+
+    if (!membership) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "No organization found" });
+    }
+
+    if (!hasPermission(membership.role as any, "canViewBilling")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "You don't have permission to view billing details",
+      });
+    }
+
     const org = membership?.organization;
     return {
       plan: org?.plan || "FREE",
@@ -144,6 +178,13 @@ export const billingRouter = createTRPCRouter({
         });
       }
 
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can manage billing",
+        });
+      }
+
       await prisma.organization.update({
         where: { id: membership.organization.id },
         data: { autoRenew: input.autoRenew },
@@ -162,6 +203,13 @@ export const billingRouter = createTRPCRouter({
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "No organization found",
+      });
+    }
+
+    if (!hasPermission(membership.role as any, "canManageBilling")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only managers can manage billing",
       });
     }
 
@@ -192,6 +240,13 @@ export const billingRouter = createTRPCRouter({
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "No organization found",
+      });
+    }
+
+    if (!hasPermission(membership.role as any, "canManageBilling")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only managers can manage billing",
       });
     }
 

@@ -34,7 +34,7 @@ export const organizationRouter = createTRPCRouter({
         data: {
           organizationId: org.id,
           userId,
-          role: "OWNER",
+          role: "MANAGER",
         },
       });
 
@@ -80,7 +80,7 @@ export const organizationRouter = createTRPCRouter({
         data: {
           organizationId: org.id,
           userId,
-          role: "MEMBER",
+          role: "EMPLOYEE",
         },
       });
 
@@ -102,5 +102,214 @@ export const organizationRouter = createTRPCRouter({
     });
 
     return membership?.organization ?? null;
+  }),
+
+  listMembers: protectedProcedure.query(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
+    const userId = ctx.session.user.id;
+
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId },
+    });
+    if (!membership) throw new TRPCError({ code: "NOT_FOUND", message: "No org" });
+
+    const members = await prisma.organizationMember.findMany({
+      where: { organizationId: membership.organizationId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+      },
+      orderBy: { joinedAt: "asc" },
+    });
+
+    return members;
+  }),
+
+  inviteMember: protectedProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        role: z.enum(["MANAGER", "ADMIN", "DEVELOPER", "HR", "ACCOUNTANT", "FINANCE", "EMPLOYEE"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+
+      // Check inviter has permission
+      const inviter = await prisma.organizationMember.findFirst({
+        where: { userId },
+      });
+      if (!inviter) throw new TRPCError({ code: "NOT_FOUND", message: "No org" });
+
+      const { hasPermission } = await import("../rbac");
+      if (!hasPermission(inviter.role as any, "canManageMembers")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to invite members",
+        });
+      }
+
+      // Only MANAGER can assign MANAGER role
+      if (input.role === "MANAGER" && inviter.role !== "MANAGER") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can promote someone to manager",
+        });
+      }
+
+      // Find the user to invite
+      const user = await prisma.user.findUnique({
+        where: { email: input.email },
+      });
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No user with that email exists. They need to sign up first.",
+        });
+      }
+
+      // Check if already in an org
+      const existing = await prisma.organizationMember.findFirst({
+        where: { userId: user.id },
+      });
+      if (existing) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This user is already part of an organization",
+        });
+      }
+
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: inviter.organizationId,
+          userId: user.id,
+          role: input.role,
+        },
+      });
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { organizationId: inviter.organizationId },
+      });
+
+      return { ok: true };
+    }),
+
+  updateMemberRole: protectedProcedure
+    .input(
+      z.object({
+        memberId: z.string(),
+        role: z.enum(["MANAGER", "ADMIN", "DEVELOPER", "HR", "ACCOUNTANT", "FINANCE", "EMPLOYEE"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+
+      const updater = await prisma.organizationMember.findFirst({
+        where: { userId },
+      });
+      if (!updater) throw new TRPCError({ code: "NOT_FOUND", message: "No org" });
+
+      const { hasPermission } = await import("../rbac");
+      if (!hasPermission(updater.role as any, "canChangeRoles")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can change roles",
+        });
+      }
+
+      const target = await prisma.organizationMember.findUnique({
+        where: { id: input.memberId },
+      });
+      if (!target || target.organizationId !== updater.organizationId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+      }
+
+      // Can't demote yourself
+      if (target.userId === userId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot change your own role",
+        });
+      }
+
+      await prisma.organizationMember.update({
+        where: { id: input.memberId },
+        data: { role: input.role },
+      });
+
+      return { ok: true };
+    }),
+
+  removeMember: protectedProcedure
+    .input(z.object({ memberId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+
+      const remover = await prisma.organizationMember.findFirst({
+        where: { userId },
+      });
+      if (!remover) throw new TRPCError({ code: "NOT_FOUND", message: "No org" });
+
+      const { hasPermission } = await import("../rbac");
+      if (!hasPermission(remover.role as any, "canManageMembers")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to remove members",
+        });
+      }
+
+      const target = await prisma.organizationMember.findUnique({
+        where: { id: input.memberId },
+      });
+      if (!target || target.organizationId !== remover.organizationId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+      }
+
+      // Can't remove yourself
+      if (target.userId === userId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot remove yourself. Delete the org instead.",
+        });
+      }
+
+      // Only managers can remove admins/managers
+      if ((target.role === "MANAGER" || target.role === "ADMIN") && remover.role !== "MANAGER") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers can remove admins or other managers",
+        });
+      }
+
+      await prisma.organizationMember.delete({ where: { id: input.memberId } });
+      await prisma.user.update({
+        where: { id: target.userId },
+        data: { organizationId: null },
+      });
+
+      return { ok: true };
+    }),
+
+  currentUserRole: protectedProcedure.query(async ({ ctx }) => {
+    const prisma = await ctx.getPrisma();
+    const userId = ctx.session.user.id;
+
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId },
+      include: { organization: true },
+    });
+
+    if (!membership) return null;
+
+    return {
+      role: membership.role,
+      organizationId: membership.organizationId,
+      organizationName: membership.organization.name,
+    };
   }),
 });

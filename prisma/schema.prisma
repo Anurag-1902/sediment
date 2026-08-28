@@ -123,16 +123,26 @@ model Organization {
 }
 
 model OrganizationMember {
-  id            String       @id @default(cuid())
-  organizationId String      @map("organization_id")
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId        String       @map("user_id")
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role          String       @default("MEMBER")
-  joinedAt      DateTime     @default(now()) @map("joined_at")
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           OrgRole      @default(EMPLOYEE)
+  joinedAt       DateTime     @default(now()) @map("joined_at")
 
   @@unique([organizationId, userId])
   @@map("organization_member")
+}
+
+enum OrgRole {
+  MANAGER
+  ADMIN
+  DEVELOPER
+  HR
+  ACCOUNTANT
+  FINANCE
+  EMPLOYEE
 }
 
 enum ProjectRole {

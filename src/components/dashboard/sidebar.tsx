@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, LayoutDashboard, Settings, MessageSquare } from "lucide-react";
+import { Layers, LayoutDashboard, Settings, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 
 export function DashboardSidebar({ userName }: { userName?: string | null }) {
   const pathname = usePathname();
   const { data: workspace } = trpc.slackWorkspace.get.useQuery();
+  const { data: currentRole } = trpc.organization.currentUserRole.useQuery();
   const needsSlackSetup = !workspace;
+
+  const canManageMembers = currentRole?.role === "MANAGER" || currentRole?.role === "ADMIN";
 
   const navItems = [
     {
@@ -18,12 +21,18 @@ export function DashboardSidebar({ userName }: { userName?: string | null }) {
       title: "Dashboard",
     },
     {
+      href: "/dashboard/members",
+      icon: Users,
+      title: "Team Members",
+      hidden: !canManageMembers,
+    },
+    {
       href: "/dashboard/settings/slack",
       icon: MessageSquare,
       title: "Slack Integration",
       badge: needsSlackSetup,
     },
-  ];
+  ].filter((item) => !item.hidden);
 
   return (
     <aside className="hidden lg:flex w-16 flex-col items-center border-r border-border-custom bg-slate py-4">

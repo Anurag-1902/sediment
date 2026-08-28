@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, paidProcedure } from "../trpc";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { WebClient } from "@slack/web-api";
+import { hasPermission } from "../rbac";
 
 export const slackWorkspaceRouter = createTRPCRouter({
   get: paidProcedure.query(async ({ ctx }) => {
@@ -38,6 +39,21 @@ export const slackWorkspaceRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
       const organizationId = ctx.organizationId;
+
+      // Check permission
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId: ctx.session.user.id, organizationId },
+      });
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+      }
+      if (!hasPermission(membership.role as any, "canManageSlack")) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only managers and admins can manage Slack settings",
+        });
+      }
+
       const existing = await prisma.slackWorkspace.findUnique({
         where: { organizationId },
       });
@@ -85,6 +101,20 @@ export const slackWorkspaceRouter = createTRPCRouter({
   test: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const organizationId = ctx.organizationId;
+
+    // Check permission
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: ctx.session.user.id, organizationId },
+    });
+    if (!membership) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+    }
+    if (!hasPermission(membership.role as any, "canManageSlack")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only managers and admins can manage Slack settings",
+      });
+    }
 
     const workspace = await prisma.slackWorkspace.findUnique({
       where: { organizationId },
@@ -135,6 +165,20 @@ export const slackWorkspaceRouter = createTRPCRouter({
   delete: paidProcedure.mutation(async ({ ctx }) => {
     const prisma = await ctx.getPrisma();
     const organizationId = ctx.organizationId;
+
+    // Check permission
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: ctx.session.user.id, organizationId },
+    });
+    if (!membership) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found" });
+    }
+    if (!hasPermission(membership.role as any, "canManageSlack")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only managers and admins can manage Slack settings",
+      });
+    }
 
     await prisma.slackWorkspace.deleteMany({
       where: { organizationId },
