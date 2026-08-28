@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { PricingComparison } from "./components/pricing-comparison";
 
 const plans = [
   {
@@ -342,6 +343,54 @@ export default function PricingPage() {
             </p>
           </div>
         )}
+
+        <div className="mt-16 pt-12 border-t border-border-custom/50">
+          <h2 className="text-3xl font-bold text-text text-center mb-12">
+            Feature Comparison
+          </h2>
+          <PricingComparison onSelectPlan={handleChoosePlan} currentPlan={currentPlan?.plan} />
+        </div>
+
+        <div className="mt-16 pt-12 border-t border-border-custom/50">
+          <h2 className="text-3xl font-bold text-text text-center mb-12">
+            Frequently Asked Questions
+          </h2>
+          <div className="mx-auto max-w-2xl space-y-4">
+            {[
+              {
+                q: "Can I change plans anytime?",
+                a: "Yes! Upgrade, downgrade, or cancel at any time. Your access is pro-rated to your billing cycle.",
+              },
+              {
+                q: "Is there a free trial?",
+                a: "Yes. The Starter plan is ₹1/day for 24 hours — perfect for testing all features with your team.",
+              },
+              {
+                q: "Do you offer team discounts?",
+                a: "For large teams or annual commitments, contact us at support@sediment.app for custom pricing.",
+              },
+              {
+                q: "What payment methods do you accept?",
+                a: "We accept credit/debit cards, UPI, and netbanking via Razorpay. International payments are supported.",
+              },
+              {
+                q: "Can I use Sediment without Slack?",
+                a: "Not yet — Sediment is built for Slack-first teams. Email us if you need a standalone version.",
+              },
+            ].map((item, idx) => (
+              <details
+                key={idx}
+                className="rounded-lg border border-border-custom bg-charcoal p-4 cursor-pointer group"
+              >
+                <summary className="font-medium text-text flex justify-between items-center">
+                  {item.q}
+                  <span className="text-text-muted group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-3 text-text-muted text-sm">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
       </main>
     </>
   );
