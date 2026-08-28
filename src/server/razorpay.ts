@@ -1,7 +1,9 @@
 import Razorpay from "razorpay";
 
-export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID ?? "";
-export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "";
+// NOTE: For production, move these to environment variables.
+// These are temporarily hardcoded because .env is gitignored and doesn't deploy.
+export const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID ?? "rzp_live_SwmqjsLL8ilBcE";
+export const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "SLH8zKSNqohUOCeoyRj7h2GL";
 
 if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
   console.warn("Razorpay credentials not set — payments will fail");
