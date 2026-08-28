@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { resend, EMAIL_FROM } from "../../resend";
 
 export const organizationRouter = createTRPCRouter({
   create: protectedProcedure
@@ -126,115 +127,94 @@ export const organizationRouter = createTRPCRouter({
     return members;
   }),
 
-  inviteMember: protectedProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        role: z.enum(["MANAGER", "ADMIN", "DEVELOPER", "HR", "ACCOUNTANT", "FINANCE", "EMPLOYEE"]),
-      })
-    )
+  sendInvite: protectedProcedure
+    .input(z.object({
+      email: z.string().email(),
+      role: z.enum(["MANAGER", "ADMIN", "DEVELOPER", "HR", "ACCOUNTANT", "FINANCE", "EMPLOYEE"]).default("EMPLOYEE"),
+    }))
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
-      const crypto = await import("crypto");
 
-      // Check inviter has permission
-      const inviter = await prisma.organizationMember.findFirst({
+      const membership = await prisma.organizationMember.findFirst({
         where: { userId },
-        include: {
-          organization: true,
-          user: true,
-        },
+        include: { organization: true },
       });
-      if (!inviter) throw new TRPCError({ code: "NOT_FOUND", message: "No org" });
+
+      if (!membership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No organization found" });
+      }
 
       const { hasPermission } = await import("../rbac");
-      if (!hasPermission(inviter.role as any, "canManageMembers")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You don't have permission to invite members",
-        });
+      if (!hasPermission(membership.role as any, "canManageBilling")) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can send invites" });
       }
 
-      if (input.role === "MANAGER" && inviter.role !== "MANAGER") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only managers can promote someone to manager",
+      // Check if user is already a member
+      const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
+      if (existingUser) {
+        const existingMember = await prisma.organizationMember.findFirst({
+          where: { userId: existingUser.id, organizationId: membership.organization.id },
         });
+        if (existingMember) {
+          throw new TRPCError({ code: "CONFLICT", message: "This person is already a member" });
+        }
       }
 
-      // Find the user by email
-      const user = await prisma.user.findUnique({
-        where: { email: input.email },
-      });
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No user with that email exists. Ask them to sign up at Sediment first, then invite them.",
-        });
-      }
-
-      // Check if already in an org
-      const existingMembership = await prisma.organizationMember.findFirst({
-        where: { userId: user.id },
-      });
-      if (existingMembership) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "This user is already part of an organization",
-        });
-      }
-
-      // Check if there's already a pending invite for this user to this org
-      const existingInvite = await prisma.organizationInvite.findFirst({
-        where: {
-          invitedUserId: user.id,
-          organizationId: inviter.organizationId,
-          status: "PENDING",
-        },
-      });
-      if (existingInvite) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "An invite has already been sent to this user. They need to accept or decline it first.",
-        });
-      }
-
-      // Create the invite with a random token, expires in 7 days
+      // Generate a unique invite token
+      const crypto = await import("crypto");
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7-day expiry
 
-      await prisma.organizationInvite.create({
+      // Store the invite in DB
+      const invite = await prisma.organizationInvite.create({
         data: {
-          organizationId: inviter.organizationId,
-          invitedEmail: input.email,
-          invitedUserId: user.id,
-          invitedByUserId: userId,
+          organizationId: membership.organization.id,
+          email: input.email,
           role: input.role,
           token,
           expiresAt,
+          invitedById: userId,
         },
       });
 
-      // Send the invite email
-      const { sendInviteEmail } = await import("@/lib/email");
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://nd-functionality-of.projects.krut.ai";
-      const acceptUrl = `${appUrl}/invite/${token}`;
+      // Build invite URL
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://nd-functionality-of.projects.krut.ai";
+      const inviteUrl = `${baseUrl}/invite/${token}`;
 
-      const emailResult = await sendInviteEmail({
-        to: input.email,
-        inviterName: inviter.user.name,
-        organizationName: inviter.organization.name,
-        role: input.role,
-        acceptUrl,
-      });
+      // Send email via Resend
+      const senderUser = ctx.session.user;
+      try {
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: input.email,
+          subject: `${senderUser.name || "Someone"} invited you to join ${membership.organization.name} on Sediment`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+              <h2 style="color: #1a1a1a; margin-bottom: 8px;">You're invited to Sediment</h2>
+              <p style="color: #666; font-size: 15px; line-height: 1.5;">
+                <strong>${senderUser.name || "A team member"}</strong> has invited you to join
+                <strong>${membership.organization.name}</strong> on Sediment — async standups for Slack teams.
+              </p>
+              <a href="${inviteUrl}"
+                 style="display: inline-block; background: #D97706; color: #fff; text-decoration: none;
+                        padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px; margin: 24px 0;">
+                Accept Invite
+              </a>
+              <p style="color: #999; font-size: 13px; margin-top: 24px;">
+                This invite expires in 7 days. If you didn't expect this, you can ignore this email.
+              </p>
+            </div>
+          `,
+        });
 
-      if (!emailResult.ok) {
-        console.error("Invite created but email failed to send:", emailResult.error);
+        return { ok: true, message: `Invite sent to ${input.email}` };
+      } catch (err: any) {
+        console.error("[RESEND] Failed to send invite email:", err);
+        // Still return OK — invite is saved in DB, user can share link manually
+        return { ok: true, inviteUrl, message: `Invite created but email failed. Share this link manually: ${inviteUrl}` };
       }
-
-      return { ok: true, emailSent: emailResult.ok };
     }),
 
   listPendingInvites: protectedProcedure.query(async ({ ctx }) => {
@@ -249,25 +229,9 @@ export const organizationRouter = createTRPCRouter({
     const invites = await prisma.organizationInvite.findMany({
       where: {
         organizationId: membership.organizationId,
-        status: "PENDING",
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return invites;
-  }),
-
-  listMyInvites: protectedProcedure.query(async ({ ctx }) => {
-    const prisma = await ctx.getPrisma();
-    const userId = ctx.session.user.id;
-
-    const invites = await prisma.organizationInvite.findMany({
-      where: {
-        invitedUserId: userId,
-        status: "PENDING",
+        acceptedAt: null,
         expiresAt: { gt: new Date() },
       },
-      include: { organization: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -282,70 +246,52 @@ export const organizationRouter = createTRPCRouter({
 
       const invite = await prisma.organizationInvite.findUnique({
         where: { token: input.token },
+        include: { organization: true },
       });
 
-      if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
-      if (invite.status !== "PENDING") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite is no longer valid" });
+      if (!invite) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found or already used" });
+      }
+
       if (invite.expiresAt < new Date()) {
-        await prisma.organizationInvite.update({
-          where: { id: invite.id },
-          data: { status: "EXPIRED" },
-        });
         throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has expired" });
       }
-      if (invite.invitedUserId !== userId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "This invite is not for you" });
+
+      if (invite.acceptedAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has already been used" });
       }
 
-      // Check user isn't already in another org
-      const existingMembership = await prisma.organizationMember.findFirst({
-        where: { userId },
+      // Check if already a member
+      const existingMember = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: invite.organizationId },
       });
-      if (existingMembership) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You are already part of an organization. Leave it first before accepting a new invite.",
-        });
+
+      if (existingMember) {
+        throw new TRPCError({ code: "CONFLICT", message: "You are already a member of this organization" });
       }
 
-      // Add to org and mark invite as accepted
-      await prisma.$transaction([
-        prisma.organizationMember.create({
-          data: {
-            organizationId: invite.organizationId,
-            userId,
-            role: invite.role,
-          },
-        }),
-        prisma.user.update({
-          where: { id: userId },
-          data: { organizationId: invite.organizationId },
-        }),
-        prisma.organizationInvite.update({
-          where: { id: invite.id },
-          data: { status: "ACCEPTED", acceptedAt: new Date() },
-        }),
-      ]);
-
-      return { ok: true, organizationId: invite.organizationId };
-    }),
-
-  declineInvite: protectedProcedure
-    .input(z.object({ token: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const prisma = await ctx.getPrisma();
-      const invite = await prisma.organizationInvite.findUnique({
-        where: { token: input.token },
+      // Add user to org
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: invite.organizationId,
+          userId,
+          role: invite.role as any,
+        },
       });
-      if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
-      if (invite.invitedUserId !== ctx.session.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "This invite is not for you" });
-      }
+
+      // Update user's org
+      await prisma.user.update({
+        where: { id: userId },
+        data: { organizationId: invite.organizationId },
+      });
+
+      // Mark invite as accepted
       await prisma.organizationInvite.update({
         where: { id: invite.id },
-        data: { status: "DECLINED" },
+        data: { acceptedAt: new Date() },
       });
-      return { ok: true };
+
+      return { ok: true, organizationName: invite.organization.name };
     }),
 
   cancelInvite: protectedProcedure
@@ -398,7 +344,7 @@ export const organizationRouter = createTRPCRouter({
       if (!invite || invite.organizationId !== membership.organizationId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
       }
-      if (invite.status !== "PENDING") {
+      if (invite.acceptedAt) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Can only resend pending invites" });
       }
 
@@ -407,7 +353,7 @@ export const organizationRouter = createTRPCRouter({
       const acceptUrl = `${appUrl}/invite/${invite.token}`;
 
       await sendInviteEmail({
-        to: invite.invitedEmail,
+        to: invite.email,
         inviterName: membership.user.name,
         organizationName: membership.organization.name,
         role: invite.role,

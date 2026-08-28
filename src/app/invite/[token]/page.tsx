@@ -2,85 +2,68 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useEffect } from "react";
-import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
 
-export default function InviteAcceptPage() {
+export default function AcceptInvitePage() {
   const params = useParams();
   const router = useRouter();
-  const { session, isLoading } = useAuth();
-  const token = params.token as string;
-  const utils = trpc.useUtils();
+  const { session, isLoading: authLoading } = useAuth();
+  const [accepted, setAccepted] = useState(false);
 
   const acceptInvite = trpc.organization.acceptInvite.useMutation({
-    onSuccess: async () => {
-      toast.success("Welcome to the team!");
-      await utils.invalidate();
-      router.push("/dashboard");
+    onSuccess: (data) => {
+      setAccepted(true);
+      toast.success(`You've joined ${data.organizationName}!`);
+      setTimeout(() => router.push("/dashboard"), 2000);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+    },
   });
 
-  const declineInvite = trpc.organization.declineInvite.useMutation({
-    onSuccess: () => {
-      toast.success("Invite declined");
-      router.push("/");
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  // If not logged in, redirect to sign-in with the invite token in the return URL
   useEffect(() => {
-    if (!isLoading && !session) {
-      router.push(`/sign-in?redirect=/invite/${token}`);
+    if (!authLoading && !session) {
+      // Redirect to sign-in, then come back
+      router.push(`/sign-in?redirect=/invite/${params.token}`);
     }
-  }, [isLoading, session, token, router]);
+  }, [authLoading, session, router, params.token]);
 
-  if (isLoading || !session) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-charcoal">
+      <main className="min-h-screen bg-charcoal flex items-center justify-center">
         <p className="text-text-muted">Loading...</p>
-      </div>
+      </main>
+    );
+  }
+
+  if (accepted) {
+    return (
+      <main className="min-h-screen bg-charcoal flex items-center justify-center px-4">
+        <div className="rounded-2xl border border-amber/30 bg-surface p-8 text-center max-w-md">
+          <h1 className="text-2xl font-bold text-text mb-2">You're in!</h1>
+          <p className="text-text-muted">Redirecting to your dashboard...</p>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-charcoal px-4">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle>You&apos;ve been invited to Sediment</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-text-muted">
-            Someone has invited you to join their organization on Sediment. Accepting will give you access to their team&apos;s projects, standups, and analytics.
-          </p>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => acceptInvite.mutate({ token })}
-              disabled={acceptInvite.isPending || declineInvite.isPending}
-              className="flex-1 bg-amber text-charcoal hover:bg-amber-light font-semibold"
-            >
-              {acceptInvite.isPending ? "Accepting..." : "Accept Invite"}
-            </Button>
-            <Button
-              onClick={() => declineInvite.mutate({ token })}
-              disabled={acceptInvite.isPending || declineInvite.isPending}
-              variant="outline"
-              className="flex-1"
-            >
-              Decline
-            </Button>
-          </div>
-          <p className="text-xs text-text-muted text-center">
-            Signed in as {session.user.email}. Not you?{" "}
-            <Link href="/sign-out" className="text-amber hover:underline">Sign out</Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <main className="min-h-screen bg-charcoal flex items-center justify-center px-4">
+      <div className="rounded-2xl border border-border-custom bg-surface p-8 text-center max-w-md">
+        <h1 className="text-2xl font-bold text-text mb-4">Accept Invite</h1>
+        <p className="text-text-muted mb-6">
+          You've been invited to join a team on Sediment.
+        </p>
+        <button
+          onClick={() => acceptInvite.mutate({ token: params.token as string })}
+          disabled={acceptInvite.isPending}
+          className="w-full rounded-lg bg-amber text-charcoal py-3 text-sm font-semibold hover:bg-amber-light transition-colors"
+        >
+          {acceptInvite.isPending ? "Joining..." : "Accept & Join Team"}
+        </button>
+      </div>
+    </main>
   );
 }

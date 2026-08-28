@@ -31,6 +31,7 @@ model User {
   organizationId          String? @map("organization_id")
   ownedOrganizations      Organization[] @relation("OrgOwner")
   organizationMemberships OrganizationMember[]
+  sentInvites             OrganizationInvite[]
 
   @@unique([email])
   @@map("user")
@@ -140,18 +141,18 @@ model OrganizationInvite {
   id             String       @id @default(cuid())
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invitedEmail   String       @map("invited_email")
-  invitedUserId  String       @map("invited_user_id")
-  invitedByUserId String      @map("invited_by_user_id")
-  role           OrgRole
+  email          String
+  role           String       @default("MEMBER")
   token          String       @unique
-  status         String       @default("PENDING")
+  invitedById    String       @map("invited_by_id")
+  invitedBy      User         @relation(fields: [invitedById], references: [id])
   expiresAt      DateTime     @map("expires_at")
-  createdAt      DateTime     @default(now()) @map("created_at")
   acceptedAt     DateTime?    @map("accepted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
 
-  @@index([invitedUserId, status])
   @@index([token])
+  @@index([organizationId])
+  @@index([email])
   @@map("organization_invite")
 }
 

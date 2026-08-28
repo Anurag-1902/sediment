@@ -35,17 +35,19 @@ export default function MembersPage() {
   const [inviteRole, setInviteRole] = useState<string>("EMPLOYEE");
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
-  const inviteMember = trpc.organization.inviteMember.useMutation({
+  const sendInvite = trpc.organization.sendInvite.useMutation({
     onSuccess: (data) => {
-      if (data.emailSent) {
-        toast.success("Invite email sent!");
+      if (data.inviteUrl) {
+        toast.warning(data.message);
+        navigator.clipboard.writeText(data.inviteUrl);
+        toast.info("Invite link copied to clipboard (email delivery failed)");
       } else {
-        toast.warning("Invite created but email failed. You can resend it below.");
+        toast.success(data.message);
       }
       setInviteEmail("");
       utils.organization.listPendingInvites.invalidate();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message),
   });
 
   const updateRole = trpc.organization.updateMemberRole.useMutation({
@@ -90,7 +92,7 @@ export default function MembersPage() {
       toast.error("Please enter an email");
       return;
     }
-    inviteMember.mutate({ email: inviteEmail.trim(), role: inviteRole as any });
+    sendInvite.mutate({ email: inviteEmail.trim(), role: inviteRole as any });
   };
 
   if (isLoading) return <div className="p-8 text-text-muted">Loading members...</div>;
@@ -136,9 +138,9 @@ export default function MembersPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button type="submit" disabled={inviteMember.isPending}>
-                  {inviteMember.isPending ? "Inviting..." : "Invite"}
-                </Button>
+    <Button type="submit" disabled={sendInvite.isPending}>
+      {sendInvite.isPending ? "Inviting..." : "Invite"}
+    </Button>
               </div>
               <p className="text-xs text-text-muted">
                 The person must already have a Sediment account. They&apos;ll receive an email invite and can accept it to join your team.
@@ -244,7 +246,7 @@ export default function MembersPage() {
                 className="flex items-center justify-between p-3 rounded-lg border border-border-custom"
               >
                 <div>
-                  <p className="font-medium text-text">{invite.invitedEmail}</p>
+                  <p className="font-medium text-text">{invite.email}</p>
                   <p className="text-xs text-text-muted">
                     Invited as {invite.role} · Expires {new Date(invite.expiresAt).toLocaleDateString()}
                   </p>
