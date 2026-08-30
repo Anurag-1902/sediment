@@ -22,8 +22,8 @@ export function ProjectSettings({ project }: { project: any }) {
   const [channelId, setChannelId] = useState(project.slackChannelId ?? "");
   const [channelName, setChannelName] = useState(project.slackChannelName ?? "");
   const [customChannel, setCustomChannel] = useState(false);
-  const [memberHandles, setMemberHandles] = useState<string[]>(
-    project.members?.map((m: any) => m.slackHandle || m.slackUserId) ?? []
+  const [selectedMembers, setSelectedMembers] = useState<{ handle: string; role: string }[]>(
+    project.members?.map((m: any) => ({ handle: m.slackHandle || m.slackUserId, role: m.role })) ?? []
   );
   const [standupPrompt, setStandupPrompt] = useState(project.standupPrompt ?? "");
 
@@ -53,7 +53,7 @@ export function ProjectSettings({ project }: { project: any }) {
       syncTime,
       syncTimezone: timezone,
       isActive,
-      memberHandles,
+      members: selectedMembers.map((m) => ({ handle: m.handle, role: m.role.trim() || "Member" })),
       standupPrompt: standupPrompt.trim() || undefined,
     });
   };
@@ -245,8 +245,8 @@ export function ProjectSettings({ project }: { project: any }) {
 
               <div className="space-y-2">
                 <TeamMembersSelector
-                  value={memberHandles}
-                  onChange={setMemberHandles}
+                  value={selectedMembers}
+                  onChange={setSelectedMembers}
                   hasSlackConnected={!isSlackNotConnected}
                 />
               </div>

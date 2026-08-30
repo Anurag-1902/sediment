@@ -18,9 +18,11 @@ type WorkspaceUser = {
   avatarUrl: string | null;
 };
 
+const PRESET_ROLES = ["Developer", "HR", "Designer", "QA", "Product Manager", "Accountant", "Employee"];
+
 interface TeamMembersSelectorProps {
-  value: string[];
-  onChange: (ids: string[]) => void;
+  value: { handle: string; role: string }[];
+  onChange: (members: { handle: string; role: string }[]) => void;
   hasSlackConnected: boolean;
 }
 
@@ -46,25 +48,32 @@ export function TeamMembersSelector({
     usersError?.data?.code === "PRECONDITION_FAILED";
 
   const handleRemoveMember = (handle: string) => {
-    onChange(value.filter((h) => h !== handle));
+    onChange(value.filter((m) => m.handle !== handle));
+  };
+
+  const handleUpdateRole = (handle: string, role: string) => {
+    onChange(
+      value.map((m) => (m.handle === handle ? { ...m, role } : m))
+    );
   };
 
   const handleAddMember = () => {
     const trimmed = newMemberInput.trim();
     if (!trimmed) return;
-    if (value.includes(trimmed)) {
+    if (value.some((m) => m.handle === trimmed)) {
       toast.error("Member already added");
       return;
     }
-    onChange([...value, trimmed]);
+    onChange([...value, { handle: trimmed, role: "Developer" }]);
     setNewMemberInput("");
   };
 
   const handleToggleUser = (userId: string) => {
-    if (value.includes(userId)) {
-      onChange(value.filter((h) => h !== userId));
+    const existing = value.find((m) => m.handle === userId);
+    if (existing) {
+      onChange(value.filter((m) => m.handle !== userId));
     } else {
-      onChange([...value, userId]);
+      onChange([...value, { handle: userId, role: "Developer" }]);
     }
   };
 
@@ -162,7 +171,7 @@ export function TeamMembersSelector({
                   </div>
                 ) : (
                   filteredUsers.map((user: WorkspaceUser) => {
-                    const isSelected = value.includes(user.id);
+                    const isSelected = value.some((m) => m.handle === user.id);
                     return (
                       <div
                         key={user.id}
@@ -208,28 +217,35 @@ export function TeamMembersSelector({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mt-3">
-        {value.map((handle) => {
+      <div className="space-y-2 mt-3">
+        {value.map((m) => {
           const user = workspaceUsers?.find(
-            (u: WorkspaceUser) => u.id === handle
+            (u: WorkspaceUser) => u.id === m.handle
           );
-          const label = user?.realName ?? user?.name ?? handle;
+          const label = user?.realName ?? user?.name ?? m.handle;
           return (
-            <span
-              key={handle}
-              className="inline-flex items-center gap-1 bg-amber/10 text-amber-light border border-amber/20 px-3 py-1 rounded-full text-sm"
-            >
-              {label}
+            <div key={m.handle} className="flex items-center gap-3 p-2 rounded-lg border border-border-custom">
+              <span className="flex-1 text-sm text-text">{label}</span>
+              <input
+                list="preset-roles"
+                value={m.role}
+                onChange={(e) => handleUpdateRole(m.handle, e.target.value)}
+                placeholder="Role (pick or type)"
+                className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-amber"
+              />
               <button
                 type="button"
-                onClick={() => handleRemoveMember(handle)}
-                className="ml-1 text-amber-light hover:text-amber"
+                onClick={() => handleRemoveMember(m.handle)}
+                className="text-text-muted hover:text-red-400 text-sm px-2"
               >
-                ×
+                Remove
               </button>
-            </span>
+            </div>
           );
         })}
+        <datalist id="preset-roles">
+          {PRESET_ROLES.map((r) => <option key={r} value={r} />)}
+        </datalist>
       </div>
 
       <div className="mt-2">

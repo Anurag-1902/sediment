@@ -54,7 +54,7 @@ export default function NewProjectPage() {
   const [channelName, setChannelName] = useState("");
   const [syncTime, setSyncTime] = useState("09:00");
   const [timezone, setTimezone] = useState("America/New_York");
-  const [handles, setHandles] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<{ handle: string; role: string }[]>([]);
   const [customChannel, setCustomChannel] = useState(false);
   const [standupPrompt, setStandupPrompt] = useState("");
 
@@ -83,7 +83,7 @@ export default function NewProjectPage() {
       slackChannelName: channelName,
       syncTime,
       syncTimezone: timezone,
-      memberHandles: handles,
+      members: selectedMembers.map((m) => ({ handle: m.handle, role: m.role.trim() || "Member" })),
       standupPrompt: standupPrompt.trim() || undefined,
     });
   };
@@ -278,8 +278,8 @@ export default function NewProjectPage() {
               </div>
 
               <TeamMembersSelector
-                value={handles}
-                onChange={setHandles}
+                value={selectedMembers}
+                onChange={setSelectedMembers}
                 hasSlackConnected={!isSlackNotConnected}
               />
 

@@ -83,13 +83,16 @@ export const projectRouter = createTRPCRouter({
         slackChannelName: z.string().min(1),
         syncTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
         syncTimezone: z.string().min(1),
-        memberHandles: z.array(z.string()).default([]),
+        members: z.array(z.object({
+          handle: z.string(),
+          role: z.string().min(1).max(50).default("Member"),
+        })).default([]),
         standupPrompt: z.string().min(10).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
-      const { memberHandles, ...data } = input;
+      const { members, ...data } = input;
       const userId = ctx.session.user.id;
       const organizationId = ctx.organizationId;
 
@@ -108,18 +111,18 @@ export const projectRouter = createTRPCRouter({
       }
 
       const resolvedMembers = [];
-      for (const handle of memberHandles) {
-        const user = await resolveSlackUser(handle, organizationId);
+      for (const m of members) {
+        const user = await resolveSlackUser(m.handle, organizationId);
         if (!user) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Could not resolve Slack handle: ${handle}`,
+            message: `Could not resolve Slack handle: ${m.handle}`,
           });
         }
         resolvedMembers.push({
           slackUserId: user.id,
           slackHandle: user.realName || user.name,
-          role: "MEMBER",
+          role: m.role.trim() || "Member",
         });
       }
 
@@ -150,14 +153,17 @@ export const projectRouter = createTRPCRouter({
         syncTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
         syncTimezone: z.string().min(1).optional(),
         isActive: z.boolean().optional(),
-        memberHandles: z.array(z.string()).optional(),
+        members: z.array(z.object({
+          handle: z.string(),
+          role: z.string().min(1).max(50).default("Member"),
+        })).optional(),
         standupPrompt: z.string().min(10).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
-      const { id, memberHandles, ...data } = input;
+      const { id, members, ...data } = input;
 
       const existing = await prisma.project.findFirst({
         where: { id, ownerId: userId },
@@ -181,21 +187,21 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
-      if (memberHandles !== undefined) {
+      if (members !== undefined) {
         const resolvedMembers = [];
-        for (const handle of memberHandles) {
-          const user = await resolveSlackUser(handle, existing.organizationId);
+        for (const m of members) {
+          const user = await resolveSlackUser(m.handle, existing.organizationId);
           if (!user) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `Could not resolve Slack handle: ${handle}`,
+              message: `Could not resolve Slack handle: ${m.handle}`,
             });
           }
           resolvedMembers.push({
             projectId: id,
             slackUserId: user.id,
             slackHandle: user.realName || user.name,
-            role: "MEMBER",
+            role: m.role.trim() || "Member",
           });
         }
 
@@ -214,6 +220,46 @@ export const projectRouter = createTRPCRouter({
       });
 
       return updated;
+    }),
+
+  updateMemberRole: protectedProcedure
+    .input(z.object({
+      projectId: z.string(),
+      memberId: z.string(),
+      role: z.string().min(1).max(50),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+
+      const project = await prisma.project.findFirst({
+        where: { id: input.projectId },
+        select: { organizationId: true },
+      });
+      if (!project) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: project.organizationId },
+      });
+      if (!membership || !hasPermission(membership.role as any, "canManageProjects")) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You don't have permission to manage project members" });
+      }
+
+      const member = await prisma.projectMember.findFirst({
+        where: { id: input.memberId, projectId: input.projectId },
+      });
+      if (!member) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Member not found in this project" });
+      }
+
+      await prisma.projectMember.update({
+        where: { id: input.memberId },
+        data: { role: input.role.trim() || "Member" },
+      });
+
+      return { ok: true };
     }),
 
   delete: protectedProcedure

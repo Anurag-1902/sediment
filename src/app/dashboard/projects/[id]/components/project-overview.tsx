@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Clock, Users, AlertTriangle, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProjectOverviewProps {
   stats:
@@ -15,12 +16,36 @@ interface ProjectOverviewProps {
         lastSync: { createdAt: Date; updates: Array<{ id: string }> } | null;
       }
     | undefined;
-  project: { syncTime: string; syncTimezone: string; slackChannelName: string; standupPrompt: string };
+  project: {
+    syncTime: string;
+    syncTimezone: string;
+    slackChannelName: string;
+    standupPrompt: string;
+    members: Array<{ id: string; slackHandle: string | null; slackUserId: string; role: string }>;
+  };
   projectId: string;
+}
+
+const PRESET_ROLES = ["Developer", "HR", "Designer", "QA", "Product Manager", "Accountant", "Employee"];
+
+function canManageProjects(role: string | undefined) {
+  if (!role) return false;
+  const r = role;
+  return r === "MANAGER" || r === "ADMIN" || r === "OWNER";
 }
 
 export function ProjectOverview({ stats, project, projectId }: ProjectOverviewProps) {
   const { data: updates } = trpc.update.listByProject.useQuery({ projectId });
+  const utils = trpc.useUtils();
+  const { data: currentUserRole } = trpc.organization.currentUserRole.useQuery();
+  const updateMemberRole = trpc.project.updateMemberRole.useMutation({
+    onSuccess: () => {
+      toast.success("Role updated");
+      utils.project.get.invalidate({ id: projectId });
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const isManager = canManageProjects(currentUserRole?.role);
   const recentUpdates = updates ?? [];
   return (
     <div className="space-y-6">
@@ -98,6 +123,49 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
           <p className="text-xs text-text-muted mt-2">
             Edit in Settings tab
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {project.members.length === 0 ? (
+            <p className="text-sm text-text-muted italic py-4 text-center">
+              No members assigned yet. Add them in the Settings tab.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {project.members.map((member) => (
+                <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg border border-border-custom">
+                  <span className="flex-1 text-sm text-text">
+                    {member.slackHandle ?? member.slackUserId}
+                  </span>
+                  {isManager ? (
+                    <input
+                      list="preset-roles-detail"
+                      defaultValue={member.role}
+                      onBlur={(e) => {
+                        const newRole = e.target.value.trim();
+                        if (newRole && newRole !== member.role) {
+                          updateMemberRole.mutate({ projectId, memberId: member.id, role: newRole });
+                        }
+                      }}
+                      className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-amber"
+                    />
+                  ) : (
+                    <span className="text-sm text-text-muted">{member.role}</span>
+                  )}
+                </div>
+              ))}
+              <datalist id="preset-roles-detail">
+                {PRESET_ROLES.map((r) => (
+                  <option key={r} value={r} />
+                ))}
+              </datalist>
+            </div>
+          )}
         </CardContent>
       </Card>
 
