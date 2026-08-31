@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
+import Fuse from "fuse.js";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,22 @@ export function TeamMembersSelector({
   const isSlackNotConnected =
     usersError?.data?.code === "PRECONDITION_FAILED";
 
+  const fuse = useMemo(() => {
+    if (!workspaceUsers) return null;
+    return new Fuse(workspaceUsers, {
+      keys: [
+        { name: "realName", weight: 0.5 },
+        { name: "name", weight: 0.3 },
+        { name: "displayName", weight: 0.2 },
+      ],
+      threshold: 0.4,
+      distance: 100,
+      minMatchCharLength: 1,
+      includeScore: true,
+      ignoreLocation: true,
+    });
+  }, [workspaceUsers]);
+
   const handleRemoveMember = (handle: string) => {
     onChange(value.filter((m) => m.handle !== handle));
   };
@@ -76,15 +93,12 @@ export function TeamMembersSelector({
     }
   };
 
-  const filteredUsers =
-    workspaceUsers?.filter((u: WorkspaceUser) => {
-      const q = memberSearch.toLowerCase();
-      return (
-        u.realName.toLowerCase().includes(q) ||
-        u.name.toLowerCase().includes(q) ||
-        (u.displayName && u.displayName.toLowerCase().includes(q))
-      );
-    }) ?? [];
+  const filteredUsers = useMemo(() => {
+    if (!workspaceUsers) return [];
+    if (!memberSearch.trim()) return workspaceUsers;
+    if (!fuse) return workspaceUsers;
+    return fuse.search(memberSearch.trim()).map((result) => result.item);
+  }, [workspaceUsers, memberSearch, fuse]);
 
   return (
     <div className="space-y-2">
