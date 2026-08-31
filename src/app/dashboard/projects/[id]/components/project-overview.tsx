@@ -144,6 +144,7 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
                   </span>
                   {isManager ? (
                     <input
+                      key={`${member.id}-${member.role}`}
                       list="preset-roles-detail"
                       defaultValue={member.role}
                       onBlur={(e) => {
@@ -159,12 +160,12 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
                   )}
                 </div>
               ))}
-              <datalist id="preset-roles-detail">
-                {PRESET_ROLES.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
             </div>
+            <datalist id="preset-roles-detail">
+              {PRESET_ROLES.map((r) => (
+                <option key={r} value={r} />
+              ))}
+            </datalist>
           )}
         </CardContent>
       </Card>
