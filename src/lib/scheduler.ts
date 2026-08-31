@@ -158,7 +158,7 @@ export async function runFollowups() {
           try {
             await postFollowUpMessage(
               session.project.slackChannelId,
-              session.project.slackMessageTs,
+              session.slackMessageTs,
               member.slackUserId,
               task.description,
               session.project.organizationId
