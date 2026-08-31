@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoleSelector } from "@/components/ui/role-selector";
 import { trpc } from "@/lib/trpc";
 import { Clock, Users, AlertTriangle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -25,8 +26,6 @@ interface ProjectOverviewProps {
   };
   projectId: string;
 }
-
-const PRESET_ROLES = ["Developer", "HR", "Designer", "QA", "Product Manager", "Accountant", "Employee"];
 
 function canManageProjects(role: string | undefined) {
   if (!role) return false;
@@ -144,17 +143,16 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
                       {member.slackHandle ?? member.slackUserId}
                     </span>
                     {isManager ? (
-                      <input
+                      <RoleSelector
                         key={`${member.id}-${member.role}`}
-                        list="preset-roles-detail"
-                        defaultValue={member.role}
-                        onBlur={(e) => {
-                          const newRole = e.target.value.trim();
-                          if (newRole && newRole !== member.role) {
+                        value={member.role}
+                        onChange={() => {}}
+                        onCommit={(newRole) => {
+                          if (newRole !== member.role) {
                             updateMemberRole.mutate({ projectId, memberId: member.id, role: newRole });
                           }
                         }}
-                        className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-amber"
+                        className="w-44"
                       />
                     ) : (
                       <span className="text-sm text-text-muted">{member.role}</span>
@@ -162,11 +160,6 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
                   </div>
                 ))}
               </div>
-              <datalist id="preset-roles-detail">
-                {PRESET_ROLES.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
             </>
           )}
         </CardContent>

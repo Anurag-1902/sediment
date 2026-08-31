@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RoleSelector } from "@/components/ui/role-selector";
 import { toast } from "sonner";
 import { MessageSquare } from "lucide-react";
 
@@ -17,8 +18,6 @@ type WorkspaceUser = {
   displayName?: string | undefined;
   avatarUrl: string | null;
 };
-
-const PRESET_ROLES = ["Developer", "HR", "Designer", "QA", "Product Manager", "Accountant", "Employee"];
 
 interface TeamMembersSelectorProps {
   value: { handle: string; role: string }[];
@@ -226,12 +225,10 @@ export function TeamMembersSelector({
           return (
             <div key={m.handle} className="flex items-center gap-3 p-2 rounded-lg border border-border-custom">
               <span className="flex-1 text-sm text-text">{label}</span>
-              <input
-                list="preset-roles"
+              <RoleSelector
                 value={m.role}
-                onChange={(e) => handleUpdateRole(m.handle, e.target.value)}
-                placeholder="Role (pick or type)"
-                className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-amber"
+                onChange={(newRole) => handleUpdateRole(m.handle, newRole)}
+                className="w-44"
               />
               <button
                 type="button"
@@ -243,9 +240,6 @@ export function TeamMembersSelector({
             </div>
           );
         })}
-        <datalist id="preset-roles">
-          {PRESET_ROLES.map((r) => <option key={r} value={r} />)}
-        </datalist>
       </div>
 
       <div className="mt-2">
