@@ -136,36 +136,38 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
               No members assigned yet. Add them in the Settings tab.
             </p>
           ) : (
-            <div className="space-y-2">
-              {project.members.map((member) => (
-                <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg border border-border-custom">
-                  <span className="flex-1 text-sm text-text">
-                    {member.slackHandle ?? member.slackUserId}
-                  </span>
-                  {isManager ? (
-                    <input
-                      key={`${member.id}-${member.role}`}
-                      list="preset-roles-detail"
-                      defaultValue={member.role}
-                      onBlur={(e) => {
-                        const newRole = e.target.value.trim();
-                        if (newRole && newRole !== member.role) {
-                          updateMemberRole.mutate({ projectId, memberId: member.id, role: newRole });
-                        }
-                      }}
-                      className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-amber"
-                    />
-                  ) : (
-                    <span className="text-sm text-text-muted">{member.role}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <datalist id="preset-roles-detail">
-              {PRESET_ROLES.map((r) => (
-                <option key={r} value={r} />
-              ))}
-            </datalist>
+            <>
+              <div className="space-y-2">
+                {project.members.map((member) => (
+                  <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg border border-border-custom">
+                    <span className="flex-1 text-sm text-text">
+                      {member.slackHandle ?? member.slackUserId}
+                    </span>
+                    {isManager ? (
+                      <input
+                        key={`${member.id}-${member.role}`}
+                        list="preset-roles-detail"
+                        defaultValue={member.role}
+                        onBlur={(e) => {
+                          const newRole = e.target.value.trim();
+                          if (newRole && newRole !== member.role) {
+                            updateMemberRole.mutate({ projectId, memberId: member.id, role: newRole });
+                          }
+                        }}
+                        className="w-44 rounded-lg border border-border-custom bg-charcoal px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-1 focus:ring-amber"
+                      />
+                    ) : (
+                      <span className="text-sm text-text-muted">{member.role}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <datalist id="preset-roles-detail">
+                {PRESET_ROLES.map((r) => (
+                  <option key={r} value={r} />
+                ))}
+              </datalist>
+            </>
           )}
         </CardContent>
       </Card>

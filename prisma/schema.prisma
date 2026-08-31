@@ -183,7 +183,7 @@ model Project {
   slackChannelId    String    @map("slack_channel_id")
   slackChannelName  String    @map("slack_channel_name")
   syncTime          String    @map("sync_time")
-  syncTimezone      String    @default("America/New_York") @map("sync_timezone")
+  syncTimezone      String    @default("Asia/Kolkata") @map("sync_timezone")
   standupPrompt     String    @default("What did you do yesterday? What's on today? Any blockers?") @map("standup_prompt")
   isActive          Boolean   @default(true) @map("is_active")
   createdAt         DateTime  @default(now()) @map("created_at")

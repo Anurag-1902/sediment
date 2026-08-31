@@ -26,7 +26,13 @@ export async function runStandupSync() {
 
   for (const project of activeProjects) {
     const localTime = getLocalTimeInTimezone(now, project.syncTimezone);
-    if (localTime !== project.syncTime) continue;
+    // Allow a 2-minute window to handle cron drift
+    const [syncH, syncM] = project.syncTime.split(":").map(Number);
+    const [localH, localM] = localTime.split(":").map(Number);
+    const syncMinutes = syncH * 60 + syncM;
+    const localMinutes = localH * 60 + localM;
+    const diff = Math.abs(localMinutes - syncMinutes);
+    if (diff > 1 && diff < 1438) continue; // 1438 handles midnight wraparound
 
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
     const recentSession = await prisma.syncSession.findFirst({
