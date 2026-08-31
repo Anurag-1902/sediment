@@ -294,7 +294,7 @@ export default function PricingPage() {
       : 0;
 
   // Only show plans strictly higher than the user's current active tier
-  const visiblePlans = plans.filter((plan) => planRank[plan.key] > currentRank);
+  const visiblePlans = plans;
 
   return (
     <>
@@ -427,69 +427,76 @@ export default function PricingPage() {
           </div>
         )}
 
-        {visiblePlans.length > 0 ? (
-          <div className={`mx-auto max-w-5xl grid gap-6 ${visiblePlans.length === 1 ? "md:grid-cols-1 max-w-md" : visiblePlans.length === 2 ? "md:grid-cols-2 max-w-3xl" : "md:grid-cols-3"}`}>
-            {visiblePlans.map((plan) => (
-              <div
-                key={plan.key}
-                className={`rounded-2xl border p-8 ${
-                  plan.highlighted
-                    ? "border-amber bg-surface shadow-lg shadow-amber/5"
-                    : "border-border-custom bg-surface"
-                }`}
-              >
-                {plan.highlighted && (
-                  <span className="text-xs font-semibold text-amber uppercase tracking-wider">
-                    Most Popular
-                  </span>
-                )}
-                <h2 className="text-xl font-bold text-text mt-2">{plan.name}</h2>
-                <p className="text-sm text-text-muted mt-1">{plan.description}</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-text">{plan.price}</span>
-                  <span className="text-text-muted">{plan.period}</span>
-                </div>
-
-                <button
-                  onClick={() => handleChoosePlan(plan.key)}
-                  disabled={createSubscription.isPending}
-                  className={`mt-6 w-full rounded-lg py-3 text-sm font-semibold transition-colors ${
-                    plan.highlighted
-                      ? "bg-amber text-charcoal hover:bg-amber-light"
-                      : "bg-surface-raised text-text hover:bg-surface-raised/80 border border-border-custom"
+        <div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-3">
+            {visiblePlans.map((plan) => {
+              const isCurrentPlan = currentPlan?.isActive && currentPlan.plan === plan.key;
+              return (
+                <div
+                  key={plan.key}
+                  className={`rounded-2xl border p-8 relative ${
+                    isCurrentPlan
+                      ? "border-emerald-500 bg-surface shadow-lg shadow-emerald-500/5"
+                      : plan.highlighted
+                        ? "border-amber bg-surface shadow-lg shadow-amber/5"
+                        : "border-border-custom bg-surface"
                   }`}
                 >
-                  {createSubscription.isPending ? "Processing..." : `Get ${plan.name}`}
-                </button>
-                <button
-                  onClick={() => handleChoosePlanUpi(plan.key)}
-                  disabled={createOneTimeOrder.isPending}
-                  className="mt-2 w-full rounded-lg py-3 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
-                >
-                  {createOneTimeOrder.isPending ? "Processing..." : `Pay ${plan.price} via UPI (one-time)`}
-                </button>
+                  {isCurrentPlan && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 text-white text-xs font-semibold px-4 py-1">
+                      Current Plan
+                    </span>
+                  )}
+                  {!isCurrentPlan && plan.highlighted && (
+                    <span className="text-xs font-semibold text-amber uppercase tracking-wider">
+                      Most Popular
+                    </span>
+                  )}
+                  <h2 className="text-xl font-bold text-text mt-2">{plan.name}</h2>
+                  <p className="text-sm text-text-muted mt-1">{plan.description}</p>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-text">{plan.price}</span>
+                    <span className="text-text-muted">{plan.period}</span>
+                  </div>
 
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-text-muted">
-                      <Check className="h-4 w-4 text-amber shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                  {isCurrentPlan ? (
+                    <div className="mt-6 w-full rounded-lg py-3 text-sm font-semibold text-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      ✓ Active
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleChoosePlan(plan.key)}
+                        disabled={createSubscription.isPending}
+                        className={`mt-6 w-full rounded-lg py-3 text-sm font-semibold transition-colors ${
+                          plan.highlighted
+                            ? "bg-amber text-charcoal hover:bg-amber-light"
+                            : "bg-surface-raised text-text hover:bg-surface-raised/80 border border-border-custom"
+                        }`}
+                      >
+                        {createSubscription.isPending ? "Processing..." : planRank[plan.key] > currentRank ? `Upgrade to ${plan.name}` : `Get ${plan.name}`}
+                      </button>
+                      <button
+                        onClick={() => handleChoosePlanUpi(plan.key)}
+                        disabled={createOneTimeOrder.isPending}
+                        className="mt-2 w-full rounded-lg py-3 text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+                      >
+                        {createOneTimeOrder.isPending ? "Processing..." : `Pay ${plan.price} via UPI (one-time)`}
+                      </button>
+                    </>
+                  )}
+
+                  <ul className="mt-6 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-sm text-text-muted">
+                        <Check className="h-4 w-4 text-amber shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <div className="mx-auto max-w-lg text-center rounded-2xl border border-amber/30 bg-surface p-8">
-            <h3 className="text-lg font-semibold text-text mb-2">
-              You&apos;re on our top plan 🎉
-            </h3>
-            <p className="text-sm text-text-muted">
-              You have the Business plan — the highest tier with every feature unlocked. There&apos;s nothing more to upgrade to.
-            </p>
-          </div>
-        )}
 
         <div className="mt-16 pt-12 border-t border-border-custom/50">
           <h2 className="text-3xl font-bold text-text text-center mb-12">
