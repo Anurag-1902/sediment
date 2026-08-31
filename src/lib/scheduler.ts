@@ -69,7 +69,7 @@ export async function runStandupSync() {
       const slackResult = await postSyncMessage(
         project.slackChannelId,
         project.name,
-        project.ownerId,
+        project.organizationId,
         project.standupPrompt
       );
 
@@ -158,10 +158,10 @@ export async function runFollowups() {
           try {
             await postFollowUpMessage(
               session.project.slackChannelId,
-              session.slackMessageTs,
+              session.project.slackMessageTs,
               member.slackUserId,
               task.description,
-              session.project.ownerId
+              session.project.organizationId
             );
 
             await prisma.followUp.create({
