@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, Trash2, Shield } from "lucide-react";
+import { Trash2, Shield } from "lucide-react";
 
 const ROLES = [
   { value: "MANAGER", label: "Manager", description: "Full access including billing" },
@@ -31,24 +29,7 @@ export default function MembersPage() {
   const { data: currentRole } = trpc.organization.currentUserRole.useQuery();
   const { data: pendingInvites } = trpc.organization.listPendingInvites.useQuery();
 
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<string>("EMPLOYEE");
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-
-  const sendInvite = trpc.organization.sendInvite.useMutation({
-    onSuccess: (data) => {
-      if (data.inviteUrl) {
-        toast.warning(data.message);
-        navigator.clipboard.writeText(data.inviteUrl);
-        toast.info("Invite link copied to clipboard (email delivery failed)");
-      } else {
-        toast.success(data.message);
-      }
-      setInviteEmail("");
-      utils.organization.listPendingInvites.invalidate();
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
 
   const updateRole = trpc.organization.updateMemberRole.useMutation({
     onSuccess: () => {
@@ -86,15 +67,6 @@ export default function MembersPage() {
   const canManage = currentRole?.role === "MANAGER" || currentRole?.role === "ADMIN";
   const canChangeRoles = currentRole?.role === "MANAGER";
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail.trim()) {
-      toast.error("Please enter an email");
-      return;
-    }
-    sendInvite.mutate({ email: inviteEmail.trim(), role: inviteRole as any });
-  };
-
   if (isLoading) return <div className="p-8 text-text-muted">Loading members...</div>;
 
   return (
@@ -103,52 +75,6 @@ export default function MembersPage() {
         <h1 className="text-2xl font-bold text-text">Team Members</h1>
         <p className="text-text-muted mt-1">Manage who has access to your organization</p>
       </div>
-
-      {canManage && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              Invite a member
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="colleague@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="flex-1"
-                />
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v ?? "EMPLOYEE")}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((r) => (
-                      <SelectItem
-                        key={r.value}
-                        value={r.value}
-                        disabled={r.value === "MANAGER" && currentRole?.role !== "MANAGER"}
-                      >
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-    <Button type="submit" disabled={sendInvite.isPending}>
-      {sendInvite.isPending ? "Inviting..." : "Invite"}
-    </Button>
-              </div>
-              <p className="text-xs text-text-muted">
-                The person must already have a Sediment account. They&apos;ll receive an email invite and can accept it to join your team.
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
