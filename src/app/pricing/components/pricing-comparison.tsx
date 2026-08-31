@@ -5,68 +5,59 @@ import { Button } from "@/components/ui/button";
 
 interface PricingTierFeature {
   name: string;
-  starter?: boolean | string;
   pro?: boolean | string;
   business?: boolean | string;
 }
 
 const PRICING_FEATURES: PricingTierFeature[] = [
   // Core Features
-  { name: "Slack Integration", starter: true, pro: true, business: true },
-  { name: "AI-Powered Standups", starter: true, pro: true, business: true },
-  { name: "Task Tracking", starter: true, pro: true, business: true },
-  { name: "Team Collaboration", starter: true, pro: true, business: true },
+  { name: "Slack Integration", pro: true, business: true },
+  { name: "AI-Powered Standups", pro: true, business: true },
+  { name: "Task Tracking", pro: true, business: true },
+  { name: "Team Collaboration", pro: true, business: true },
 
   // Projects & Teams
-  { name: "Projects", starter: "1", pro: "Unlimited", business: "Unlimited" },
-  { name: "Team Members", starter: "Up to 5", pro: "Unlimited", business: "Unlimited" },
-  { name: "Projects per Member", starter: "1", pro: "Unlimited", business: "Unlimited" },
+  { name: "Projects", pro: "Unlimited", business: "Unlimited" },
+  { name: "Team Members", pro: "Unlimited", business: "Unlimited" },
+  { name: "Projects per Member", pro: "Unlimited", business: "Unlimited" },
 
   // Analytics & Insights
-  { name: "Analytics Dashboard", starter: true, pro: true, business: true },
-  { name: "Velocity Tracking", starter: false, pro: true, business: true },
-  { name: "Team Workload Insights", starter: false, pro: true, business: true },
-  { name: "Response Rate Analytics", starter: false, pro: true, business: true },
+  { name: "Analytics Dashboard", pro: true, business: true },
+  { name: "Velocity Tracking", pro: true, business: true },
+  { name: "Team Workload Insights", pro: true, business: true },
+  { name: "Response Rate Analytics", pro: true, business: true },
 
   // Customization & Control
-  { name: "Custom Standup Prompts", starter: false, pro: true, business: true },
-  { name: "Standup Schedule Control", starter: false, pro: true, business: true },
-  { name: "Role-Based Access Control", starter: false, pro: false, business: true },
-  { name: "Multiple Slack Workspaces", starter: false, pro: false, business: true },
+  { name: "Custom Standup Prompts", pro: true, business: true },
+  { name: "Standup Schedule Control", pro: true, business: true },
+  { name: "Role-Based Access Control", pro: false, business: true },
+  { name: "Multiple Slack Workspaces", pro: false, business: true },
 
   // Support & SLA
-  { name: "Email Support", starter: false, pro: true, business: true },
-  { name: "Priority Support", starter: false, pro: false, business: true },
-  { name: "Custom Onboarding", starter: false, pro: false, business: true },
-  { name: "SLA Guarantee", starter: false, pro: false, business: true },
+  { name: "Email Support", pro: true, business: true },
+  { name: "Priority Support", pro: false, business: true },
+  { name: "Custom Onboarding", pro: false, business: true },
+  { name: "SLA Guarantee", pro: false, business: true },
 
   // Export & Integrations
-  { name: "Data Export", starter: false, pro: true, business: true },
-  { name: "API Access", starter: false, pro: false, business: true },
-  { name: "Webhooks", starter: false, pro: false, business: true },
+  { name: "Data Export", pro: true, business: true },
+  { name: "API Access", pro: false, business: true },
+  { name: "Webhooks", pro: false, business: true },
 ];
 
 export function PricingComparison({
   onSelectPlan,
   currentPlan,
 }: {
-  onSelectPlan: (plan: "STARTER" | "PRO" | "BUSINESS") => void;
+  onSelectPlan: (plan: "PRO" | "BUSINESS") => void;
   currentPlan?: string;
 }) {
   return (
     <div className="mx-auto max-w-7xl">
       {/* Mobile Comparison (Stacked) */}
       <div className="md:hidden space-y-6">
-        {["STARTER", "PRO", "BUSINESS"].map((planKey) => {
+        {["PRO", "BUSINESS"].map((planKey) => {
           const plans: Record<string, any> = {
-            STARTER: {
-              name: "Starter",
-              price: "₹1",
-              period: "/day",
-              description: "24-hour access to test all features",
-              cta: "Start Free Trial",
-              highlighted: false,
-            },
             PRO: {
               name: "Pro",
               price: "₹499",
@@ -108,7 +99,7 @@ export function PricingComparison({
                   <span className="text-text-muted">{plan.period}</span>
                 </div>
                 <Button
-                  onClick={() => onSelectPlan(planKey as "STARTER" | "PRO" | "BUSINESS")}
+                  onClick={() => onSelectPlan(planKey as "PRO" | "BUSINESS")}
                   disabled={isCurrent}
                   className={`w-full ${
                     isCurrent
@@ -124,7 +115,7 @@ export function PricingComparison({
 
               <div className="space-y-3">
                 {PRICING_FEATURES.map((feature) => {
-                  const featureValue = feature[planKey.toLowerCase() as "starter" | "pro" | "business"];
+                  const featureValue = feature[planKey.toLowerCase() as "pro" | "business"];
                   return (
                     <div key={feature.name} className="flex items-start gap-3">
                       {featureValue ? (
@@ -155,12 +146,6 @@ export function PricingComparison({
           <thead>
             <tr className="border-b border-border-custom">
               <th className="text-left py-4 px-4 font-semibold text-text w-64">Features</th>
-              <th className="text-center py-4 px-4">
-                <div>
-                  <p className="font-bold text-lg text-text">Starter</p>
-                  <p className="text-sm text-text-muted">₹1/day</p>
-                </div>
-              </th>
               <th className="text-center py-4 px-4 bg-surface">
                 <div>
                   <p className="font-bold text-lg text-text">Pro</p>
@@ -182,17 +167,6 @@ export function PricingComparison({
                 className={`border-b border-border-custom ${idx % 2 === 0 ? "bg-transparent" : "bg-charcoal/30"}`}
               >
                 <td className="py-4 px-4 font-medium text-text text-sm">{feature.name}</td>
-                <td className="text-center py-4 px-4">
-                  {feature.starter ? (
-                    typeof feature.starter === "string" ? (
-                      <span className="text-amber text-sm font-semibold">{feature.starter}</span>
-                    ) : (
-                      <Check className="h-5 w-5 text-emerald-400 mx-auto" />
-                    )
-                  ) : (
-                    <X className="h-5 w-5 text-text-muted/50 mx-auto" />
-                  )}
-                </td>
                 <td className="text-center py-4 px-4 bg-surface">
                   {feature.pro ? (
                     typeof feature.pro === "string" ? (
@@ -221,16 +195,6 @@ export function PricingComparison({
             {/* CTA Row */}
             <tr className="border-b border-border-custom">
               <td className="py-6 px-4"></td>
-              <td className="text-center py-6 px-4">
-                <Button
-                  onClick={() => onSelectPlan("STARTER")}
-                  disabled={currentPlan === "STARTER"}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {currentPlan === "STARTER" ? "Current" : "Choose"}
-                </Button>
-              </td>
               <td className="text-center py-6 px-4 bg-surface">
                 <Button
                   onClick={() => onSelectPlan("PRO")}

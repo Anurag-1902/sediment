@@ -9,19 +9,6 @@ import { PricingComparison } from "./components/pricing-comparison";
 
 const plans = [
   {
-    key: "STARTER" as const,
-    name: "Starter",
-    price: "₹1",
-    period: "/day",
-    description: "24-hour access to test all features",
-    features: [
-      "All features for 24 hours",
-      "1 project",
-      "Up to 5 team members",
-    ],
-    highlighted: false,
-  },
-  {
     key: "PRO" as const,
     name: "Pro",
     price: "₹499",
@@ -283,9 +270,8 @@ export default function PricingPage() {
 
   const planRank: Record<string, number> = {
     FREE: 0,
-    STARTER: 1,
-    PRO: 2,
-    BUSINESS: 3,
+    PRO: 1,
+    BUSINESS: 2,
   };
 
   const currentRank =
@@ -314,7 +300,7 @@ export default function PricingPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-text flex items-center gap-2">
-                    Your {currentPlan.plan === "BUSINESS" ? "Business" : currentPlan.plan === "PRO" ? "Pro" : "Starter"} Subscription
+                    Your {currentPlan.plan === "BUSINESS" ? "Business" : "Pro"} Subscription
                   </h3>
                   <p className="text-sm text-text-muted mt-1">Currently active</p>
                 </div>
@@ -427,7 +413,7 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-3">
+        <div className="mx-auto max-w-3xl grid gap-6 md:grid-cols-2">
             {visiblePlans.map((plan) => {
               const isCurrentPlan = currentPlan?.isActive && currentPlan.plan === plan.key;
               return (
@@ -514,10 +500,6 @@ export default function PricingPage() {
               {
                 q: "Can I change plans anytime?",
                 a: "Yes! Upgrade, downgrade, or cancel at any time. Your access is pro-rated to your billing cycle.",
-              },
-              {
-                q: "Is there a free trial?",
-                a: "Yes. The Starter plan is ₹1/day for 24 hours — perfect for testing all features with your team.",
               },
               {
                 q: "Do you offer team discounts?",
