@@ -41,7 +41,7 @@ export const PLAN_CONFIG = {
     currency: "INR",
     period: "monthly" as const,
     interval: 1,
-    description: "Sediment Pro — Unlimited projects, analytics, and custom prompts",
+    description: "Sediment Pro — Up to 3 projects with custom standup prompts and analytics",
     features: [
       "Up to 3 projects",
       "Up to 10 members per project",
