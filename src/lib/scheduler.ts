@@ -17,6 +17,17 @@ export async function runStandupSync() {
   const prisma = await getPrisma();
   const now = new Date();
 
+  // Close sessions older than 20 hours so they don't accumulate,
+  // but keep today's session open all day for late replies
+  const twentyHoursAgo = new Date(now.getTime() - 20 * 60 * 60 * 1000);
+  await prisma.syncSession.updateMany({
+    where: {
+      status: "ACTIVE",
+      scheduledAt: { lt: twentyHoursAgo },
+    },
+    data: { status: "COMPLETED" },
+  });
+
   const activeProjects = await prisma.project.findMany({
     where: { isActive: true },
     include: {
@@ -120,6 +131,7 @@ export async function runFollowups() {
   const sessions = await prisma.syncSession.findMany({
     where: {
       status: "ACTIVE",
+      followUpsSentAt: null,
       scheduledAt: {
         gte: thirtyTwoMinAgo,
         lte: twentyEightMinAgo,
@@ -159,7 +171,7 @@ export async function runFollowups() {
         });
         await prisma.syncSession.update({
           where: { id: session.id },
-          data: { status: "COMPLETED" },
+          data: { followUpsSentAt: new Date() },
         });
         continue;
       }
@@ -219,7 +231,7 @@ export async function runFollowups() {
 
       await prisma.syncSession.update({
         where: { id: session.id },
-        data: { status: "COMPLETED" },
+        data: { followUpsSentAt: new Date() },
       });
 
       results.push({ sessionId: session.id, status: "completed", followUps: unmentionedTasks.length });

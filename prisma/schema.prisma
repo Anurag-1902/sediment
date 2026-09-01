@@ -224,6 +224,7 @@ model SyncSession {
   scheduledAt     DateTime          @map("scheduled_at")
   slackMessageTs  String?           @map("slack_message_ts")
   status          SyncSessionStatus @default(PENDING)
+  followUpsSentAt DateTime?         @map("followups_sent_at")
   createdAt       DateTime          @default(now()) @map("created_at")
 
   updates         DevUpdate[]
