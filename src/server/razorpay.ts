@@ -61,7 +61,7 @@ export const PLAN_CONFIG = {
       "Everything in Pro",
       "Unlimited projects",
       "Unlimited members per project",
-      "Advanced analytics",
+      "Analytics dashboard",
       "Dedicated support",
     ],
   },

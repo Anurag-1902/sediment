@@ -33,7 +33,7 @@ const plans = [
       "Everything in Pro",
       "Unlimited projects",
       "Unlimited members per project",
-      "Advanced analytics",
+      "Analytics dashboard",
       "Dedicated support",
     ],
     highlighted: false,
