@@ -92,27 +92,31 @@ export async function runStandupSync() {
     }
 
     try {
-      const session = await prisma.syncSession.create({
-        data: {
-          projectId: project.id,
-          scheduledAt: now,
-          status: "ACTIVE",
-        },
-      });
+    const slackResult = await postSyncMessage(
+      project.slackChannelId,
+      project.name,
+      project.organizationId,
+      project.standupPrompt
+    );
 
-      const slackResult = await postSyncMessage(
-        project.slackChannelId,
-        project.name,
-        project.organizationId,
-        project.standupPrompt
-      );
+    // If Slack didn't return a message ts, replies could never attach to the
+    // session — so don't create a zombie session. Record the failure instead.
+    if (!slackResult.ts) {
+      console.error(`No message ts returned for project ${project.id} — standup not recorded`);
+      results.push({ projectId: project.id, status: "error", error: "no_message_ts" });
+      continue;
+    }
 
-      await prisma.syncSession.update({
-        where: { id: session.id },
-        data: { slackMessageTs: slackResult.ts ?? undefined },
-      });
+    const session = await prisma.syncSession.create({
+      data: {
+        projectId: project.id,
+        scheduledAt: now,
+        status: "ACTIVE",
+        slackMessageTs: slackResult.ts,
+      },
+    });
 
-      results.push({ projectId: project.id, status: "sent", ts: slackResult.ts });
+    results.push({ projectId: project.id, status: "sent", ts: slackResult.ts });
     } catch (error) {
       console.error(`Failed to send sync for project ${project.id}:`, error);
       results.push({ projectId: project.id, status: "error", error: String(error) });

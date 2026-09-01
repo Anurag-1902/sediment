@@ -137,7 +137,8 @@ export async function POST(request: Request) {
           }
         } catch (err) {
           await recordCheckpoint("botcheck_failed", { error: String(err) }).catch(() => {});
-          // Continue anyway — we filter bot messages by bot_id/subtype above already
+          // Can't confirm this isn't the bot's own message — skip to avoid a self-reply loop.
+          return Response.json({ ok: true });
         }
       }
 
