@@ -176,18 +176,6 @@ export async function runFollowups() {
         continue;
       }
 
-      const mentionedTaskIds = new Set(
-        (
-          await prisma.devUpdate.findMany({
-            where: { sessionId: session.id },
-            select: { tasks: true },
-          })
-        )
-          .flatMap((u: { tasks: unknown }) => (u.tasks as Array<{ description?: string }> | null) ?? [])
-          .map((t: { description?: string }) => t.description)
-          .filter((d: string | undefined): d is string => Boolean(d))
-      );
-
       const tasks = await prisma.task.findMany({
         where: {
           projectId: session.projectId,
@@ -195,9 +183,16 @@ export async function runFollowups() {
         },
       });
 
-      const unmentionedTasks = tasks.filter(
-        (t: { description: string }) => !mentionedTaskIds.has(t.description)
-      );
+      // A task needs a follow-up if it's still open AND was not mentioned
+      // during this session's window (i.e. lastMentionedAt is before the session started).
+      const unmentionedTasks = tasks.filter((t: { lastMentionedAt: Date | null }) => {
+        // If the task was mentioned at or after this session's scheduled time,
+        // the assignee already gave an update on it — skip.
+        if (t.lastMentionedAt && t.lastMentionedAt >= session.scheduledAt) {
+          return false;
+        }
+        return true;
+      });
 
       for (const task of unmentionedTasks) {
         const member = await prisma.projectMember.findFirst({
