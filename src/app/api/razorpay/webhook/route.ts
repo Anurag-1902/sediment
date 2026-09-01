@@ -61,13 +61,18 @@ export async function POST(req: Request) {
 
       const org = await prisma.organization.findFirst({
         where: { razorpaySubscriptionId: subscriptionId },
-        select: { id: true, plan: true },
+        select: { id: true, plan: true, planExpiresAt: true },
       });
 
       if (org) {
         const now = new Date();
-        const expiresAt = new Date(now);
-        // Check org's current plan to set correct expiry
+        // Extend from the current expiry if it's still in the future (Razorpay
+        // bills ahead), otherwise from now. This preserves already-paid days.
+        const base =
+          org.planExpiresAt && new Date(org.planExpiresAt) > now
+            ? new Date(org.planExpiresAt)
+            : now;
+        const expiresAt = new Date(base);
         if (org.plan === "STARTER") {
           expiresAt.setDate(expiresAt.getDate() + 1);
         } else {
@@ -77,7 +82,6 @@ export async function POST(req: Request) {
         await prisma.organization.update({
           where: { id: org.id },
           data: {
-            planStartedAt: now,
             planExpiresAt: expiresAt,
           },
         });
