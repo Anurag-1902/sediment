@@ -19,7 +19,15 @@ export async function runStandupSync() {
 
   const activeProjects = await prisma.project.findMany({
     where: { isActive: true },
-    include: { members: true },
+    include: {
+      members: true,
+      organization: {
+        select: {
+          plan: true,
+          planExpiresAt: true,
+        },
+      },
+    },
   });
 
   const results = [];
@@ -33,6 +41,21 @@ export async function runStandupSync() {
     const localMinutes = localH * 60 + localM;
     const diff = Math.abs(localMinutes - syncMinutes);
     if (diff > 1 && diff < 1438) continue; // 1438 handles midnight wraparound
+
+    // Skip if the org's plan has expired
+    if (project.organization?.planExpiresAt) {
+      const expiry = new Date(project.organization.planExpiresAt);
+      if (expiry < now) {
+        results.push({ project: project.name, status: "skipped", reason: "plan_expired" });
+        continue;
+      }
+    }
+
+    // Skip if no plan is set at all (free users shouldn't get standups)
+    if (!project.organization?.plan) {
+      results.push({ project: project.name, status: "skipped", reason: "no_plan" });
+      continue;
+    }
 
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
     const recentSession = await prisma.syncSession.findFirst({
@@ -102,13 +125,31 @@ export async function runFollowups() {
         lte: twentyEightMinAgo,
       },
     },
-    include: { project: true },
+    include: {
+      project: {
+        include: {
+          organization: {
+            select: {
+              plan: true,
+              planExpiresAt: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   const results = [];
 
   for (const session of sessions) {
     try {
+      // Skip follow-ups if plan expired
+      if (session.project.organization?.planExpiresAt) {
+        const expiry = new Date(session.project.organization.planExpiresAt);
+        if (expiry < new Date()) continue;
+      }
+      if (!session.project.organization?.plan) continue;
+
       const config = await getSlackConfigForOrg(session.project.organizationId);
       if (!config) {
         results.push({
