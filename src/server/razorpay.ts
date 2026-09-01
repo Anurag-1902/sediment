@@ -43,8 +43,8 @@ export const PLAN_CONFIG = {
     interval: 1,
     description: "Sediment Pro — Unlimited projects, analytics, and custom prompts",
     features: [
-      "Unlimited projects",
-      "Unlimited team members",
+      "Up to 3 projects",
+      "Up to 10 members per project",
       "Custom standup prompts",
       "Analytics dashboard",
       "Priority support",
@@ -59,8 +59,8 @@ export const PLAN_CONFIG = {
     description: "Sediment Business — Everything in Pro plus advanced features",
     features: [
       "Everything in Pro",
-      "Custom branding",
-      "API access",
+      "Unlimited projects",
+      "Unlimited members per project",
       "Advanced analytics",
       "Dedicated support",
     ],

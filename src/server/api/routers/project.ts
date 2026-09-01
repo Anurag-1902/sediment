@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, paidProcedure, protectedProcedure } from "../trpc";
 import { resolveSlackUser } from "@/server/slack";
 import { hasPermission } from "../rbac";
+import { getPlanLimits } from "@/lib/plan-limits";
 
 export const projectRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -110,6 +111,31 @@ export const projectRouter = createTRPCRouter({
         });
       }
 
+      const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { plan: true },
+      });
+      const limits = getPlanLimits(org?.plan);
+
+      // Enforce project limit
+      const existingProjectCount = await prisma.project.count({
+        where: { organizationId },
+      });
+      if (existingProjectCount >= limits.maxProjects) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Your ${org?.plan ?? "current"} plan allows up to ${limits.maxProjects === Infinity ? "unlimited" : limits.maxProjects} projects. Upgrade to Business for unlimited projects.`,
+        });
+      }
+
+      // Enforce member limit
+      if (members.length > limits.maxMembersPerProject) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Your ${org?.plan ?? "current"} plan allows up to ${limits.maxMembersPerProject === Infinity ? "unlimited" : limits.maxMembersPerProject} members per project. Upgrade to Business for unlimited members.`,
+        });
+      }
+
       const resolvedMembers = [];
       for (const m of members) {
         const user = await resolveSlackUser(m.handle, organizationId);
@@ -188,6 +214,20 @@ export const projectRouter = createTRPCRouter({
       }
 
       if (members !== undefined) {
+        const org = await prisma.organization.findUnique({
+          where: { id: existing.organizationId },
+          select: { plan: true },
+        });
+        const limits = getPlanLimits(org?.plan);
+
+        // Enforce member limit
+        if (members.length > limits.maxMembersPerProject) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Your ${org?.plan ?? "current"} plan allows up to ${limits.maxMembersPerProject === Infinity ? "unlimited" : limits.maxMembersPerProject} members per project. Upgrade to Business for unlimited members.`,
+          });
+        }
+
         const resolvedMembers = [];
         for (const m of members) {
           const user = await resolveSlackUser(m.handle, existing.organizationId);

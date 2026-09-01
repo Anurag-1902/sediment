@@ -15,8 +15,8 @@ const plans = [
     period: "/month",
     description: "For small teams getting started with async standups",
     features: [
-      "Unlimited projects",
-      "Unlimited team members",
+      "Up to 3 projects",
+      "Up to 10 members per project",
       "Custom standup prompts",
       "Analytics dashboard",
       "Priority support",
@@ -31,8 +31,8 @@ const plans = [
     description: "For growing teams that need advanced features",
     features: [
       "Everything in Pro",
-      "Custom branding",
-      "API access",
+      "Unlimited projects",
+      "Unlimited members per project",
       "Advanced analytics",
       "Dedicated support",
     ],
