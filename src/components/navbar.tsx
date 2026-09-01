@@ -66,9 +66,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-6">
           <Link href="/features" className="text-sm text-text-muted hover:text-text transition-colors">Features</Link>
           <Link href="/about" className="text-sm text-text-muted hover:text-text transition-colors">About</Link>
-          {canViewBilling && (
-            <Link href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors">Pricing</Link>
-          )}
+          <Link href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors">Pricing</Link>
         </div>
 
         <div className="flex items-center gap-4">
