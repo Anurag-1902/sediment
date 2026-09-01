@@ -18,12 +18,40 @@ export async function POST(req: Request) {
     .update(body)
     .digest("hex");
 
-  if (expectedSignature !== signature) {
+  const expectedBuf = Buffer.from(expectedSignature, "hex");
+  const receivedBuf = Buffer.from(signature, "hex");
+  if (
+    expectedBuf.length !== receivedBuf.length ||
+    !crypto.timingSafeEqual(expectedBuf, receivedBuf)
+  ) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   const event = JSON.parse(body);
   const prisma = await getPrisma();
+
+  // Idempotency: Razorpay retries webhooks — process each event only once.
+  const eventId: string | undefined =
+    event.id ??
+    (event.payload?.payment?.entity?.id
+      ? `${event.event}:${event.payload.payment.entity.id}:${event.created_at ?? ""}`
+      : event.payload?.subscription?.entity?.id
+        ? `${event.event}:${event.payload.subscription.entity.id}:${event.created_at ?? ""}`
+        : undefined);
+
+  if (eventId) {
+    try {
+      await prisma.processedWebhookEvent.create({
+        data: { eventId, eventType: event.event },
+      });
+    } catch (err: any) {
+      // Unique constraint violation = we've already handled this event. Ack and stop.
+      if (err?.code === "P2002") {
+        return NextResponse.json({ ok: true, deduped: true });
+      }
+      throw err;
+    }
+  }
 
   switch (event.event) {
     case "subscription.charged": {

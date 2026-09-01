@@ -356,3 +356,12 @@ model DebugEvent {
 
   @@map("debug_events")
 }
+
+model ProcessedWebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique @map("event_id")
+  eventType   String   @map("event_type")
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_webhook_event")
+}
