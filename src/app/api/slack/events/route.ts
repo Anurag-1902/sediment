@@ -271,7 +271,14 @@ async function handleThreadReply(event: {
           if (mentioned) {
             assigneeSlackId = mentioned.slackUserId;
             assigneeName = mentioned.name;
-            assigneeUserId = mentioned.userId ?? null;
+            const mentionedMember = await prisma.projectMember.findFirst({
+              where: {
+                projectId: session.projectId,
+                slackUserId: mentioned.slackUserId,
+              },
+              select: { userId: true },
+            });
+            assigneeUserId = mentionedMember?.userId ?? null;
           }
         }
       }
