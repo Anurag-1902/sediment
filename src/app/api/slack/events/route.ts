@@ -29,15 +29,19 @@ function extractMentionedUserId(text: string): string | null {
 
 export const dynamic = "force-dynamic";
 
-const botUserIdCache = new Map<string, string | null>();
+const BOT_ID_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const botUserIdCache = new Map<string, { value: string | null; cachedAt: number }>();
 
 async function getBotUserId(organizationId: string) {
-  if (botUserIdCache.has(organizationId)) return botUserIdCache.get(organizationId);
+  const cached = botUserIdCache.get(organizationId);
+  if (cached && Date.now() - cached.cachedAt < BOT_ID_CACHE_TTL_MS) {
+    return cached.value;
+  }
 
   const client = await getSlackClientForOrg(organizationId);
   const result = await client.auth.test();
   const botUserId = result.user_id ?? null;
-  botUserIdCache.set(organizationId, botUserId);
+  botUserIdCache.set(organizationId, { value: botUserId, cachedAt: Date.now() });
   return botUserId;
 }
 
