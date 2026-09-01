@@ -1,6 +1,8 @@
 import { postSyncMessage, getSlackConfigForOrg, postFollowUpMessage } from "@/server/slack";
 import { getPrisma } from "@/lib/krutai-server";
 
+const EXPIRY_GRACE_MS = 60 * 60 * 1000; // 1 hour grace for webhook/payment lag
+
 function getLocalTimeInTimezone(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -56,7 +58,7 @@ export async function runStandupSync() {
     // Skip if the org's plan has expired
     if (project.organization?.planExpiresAt) {
       const expiry = new Date(project.organization.planExpiresAt);
-      if (expiry < now) {
+      if (expiry.getTime() + EXPIRY_GRACE_MS < now.getTime()) {
         results.push({ project: project.name, status: "skipped", reason: "plan_expired" });
         continue;
       }
@@ -162,7 +164,7 @@ export async function runFollowups() {
       // Skip follow-ups if plan expired
       if (session.project.organization?.planExpiresAt) {
         const expiry = new Date(session.project.organization.planExpiresAt);
-        if (expiry < new Date()) continue;
+        if (expiry.getTime() + EXPIRY_GRACE_MS < Date.now()) continue;
       }
       if (!session.project.organization?.plan) continue;
 

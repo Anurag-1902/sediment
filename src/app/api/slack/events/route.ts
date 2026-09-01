@@ -112,10 +112,6 @@ export async function POST(request: Request) {
     valid: sigValid,
     hasSignature: !!signature,
     hasTimestamp: !!timestamp,
-    signaturePreview: signature.slice(0, 15),
-    timestampValue: timestamp,
-    rawBodyLength: rawBody.length,
-    signingSecretLength: signingSecret.length,
   }).catch(() => {});
 
   if (!sigValid) {
