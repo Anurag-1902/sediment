@@ -15,11 +15,11 @@ const PRICING_FEATURES: PricingTierFeature[] = [
   { name: "AI-Powered Standups", pro: true, business: true },
   { name: "Task Tracking", pro: true, business: true },
   { name: "Team Collaboration", pro: true, business: true },
+  { name: "Role-Based Access Control", pro: true, business: true },
 
-  // Projects & Teams
-  { name: "Projects", pro: "Unlimited", business: "Unlimited" },
-  { name: "Team Members", pro: "Unlimited", business: "Unlimited" },
-  { name: "Projects per Member", pro: "Unlimited", business: "Unlimited" },
+  // Projects & Teams (real enforced limits)
+  { name: "Projects", pro: "Up to 3", business: "Unlimited" },
+  { name: "Members per Project", pro: "Up to 10", business: "Unlimited" },
 
   // Analytics & Insights
   { name: "Analytics Dashboard", pro: true, business: true },
@@ -30,19 +30,11 @@ const PRICING_FEATURES: PricingTierFeature[] = [
   // Customization & Control
   { name: "Custom Standup Prompts", pro: true, business: true },
   { name: "Standup Schedule Control", pro: true, business: true },
-  { name: "Role-Based Access Control", pro: false, business: true },
-  { name: "Multiple Slack Workspaces", pro: false, business: true },
 
-  // Support & SLA
+  // Support
   { name: "Email Support", pro: true, business: true },
   { name: "Priority Support", pro: false, business: true },
-  { name: "Custom Onboarding", pro: false, business: true },
-  { name: "SLA Guarantee", pro: false, business: true },
-
-  // Export & Integrations
-  { name: "Data Export", pro: true, business: true },
-  { name: "API Access", pro: false, business: true },
-  { name: "Webhooks", pro: false, business: true },
+  { name: "Dedicated Support", pro: false, business: true },
 ];
 
 export function PricingComparison({
