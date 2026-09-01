@@ -247,6 +247,7 @@ model DevUpdate {
 
   tasksCreated    Task[]      @relation("CreatedFromUpdate")
 
+  @@unique([sessionId, slackMessageTs])
   @@map("dev_update")
 }
 

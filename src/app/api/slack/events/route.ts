@@ -64,6 +64,13 @@ export async function POST(request: Request) {
     return Response.json({ challenge: body.challenge });
   }
 
+  // Short-circuit Slack retry deliveries — we already received the original.
+  const retryNum = request.headers.get("x-slack-retry-num");
+  if (retryNum) {
+    console.log("[events] Slack retry delivery acked, retry num", retryNum);
+    return Response.json({ ok: true });
+  }
+
   // For all other requests, verify signature
   const signature = request.headers.get("x-slack-signature") ?? "";
   const timestamp = request.headers.get("x-slack-request-timestamp") ?? "";
@@ -201,6 +208,14 @@ async function handleThreadReply(event: {
   }
   console.log("[events] Session found", { sessionId: session.id, projectId: session.projectId });
   await recordCheckpoint("session_found", { sessionId: session.id, projectId: session.projectId });
+
+  const existingUpdate = await prisma.devUpdate.findFirst({
+    where: { sessionId: session.id, slackMessageTs: event.ts },
+  });
+  if (existingUpdate) {
+    console.log("[events] Duplicate delivery, update already exists for ts", event.ts);
+    return;
+  }
 
   const member = await prisma.projectMember.findFirst({
     where: { projectId: session.projectId, slackUserId: event.user },
