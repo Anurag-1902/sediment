@@ -78,9 +78,10 @@ export const paidProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   }
 
   const org = membership.organization;
+  const EXPIRY_GRACE_MS = 60 * 60 * 1000; // 1 hour — matches scheduler, absorbs webhook/payment lag
   const isActive =
     org.plan !== "FREE" && org.planExpiresAt
-      ? new Date(org.planExpiresAt) > new Date()
+      ? new Date(org.planExpiresAt).getTime() + EXPIRY_GRACE_MS > Date.now()
       : false;
 
   if (!isActive) {

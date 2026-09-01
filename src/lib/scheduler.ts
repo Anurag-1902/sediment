@@ -185,7 +185,7 @@ export async function runFollowups() {
       const tasks = await prisma.task.findMany({
         where: {
           projectId: session.projectId,
-          status: { in: ["OPEN", "IN_PROGRESS"] },
+          status: { in: ["OPEN", "IN_PROGRESS", "BLOCKED"] },
         },
       });
 
