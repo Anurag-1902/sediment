@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const requestHeaders = await headers();
-  const secret = requestHeaders.get("x-cron-secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  const secret = requestHeaders.get("x-debug-secret");
+  if (!process.env.DEBUG_SECRET || secret !== process.env.DEBUG_SECRET) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
