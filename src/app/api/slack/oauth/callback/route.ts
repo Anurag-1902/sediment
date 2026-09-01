@@ -70,6 +70,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: data.error || "OAuth failed" }, { status: 400 });
     }
 
+    if (data.team?.id) {
+      await prisma.slackWorkspace.update({
+        where: { organizationId: membership.organizationId },
+        data: { workspaceId: data.team.id },
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       workspace: data.team?.name,

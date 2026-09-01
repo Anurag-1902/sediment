@@ -83,27 +83,10 @@ export async function POST(request: Request) {
   const prisma = await getPrisma();
   let workspace = null;
 
-  // Try to match by workspaceId first
   if (teamId) {
     workspace = await prisma.slackWorkspace.findFirst({
       where: { workspaceId: teamId },
     });
-  }
-
-  // FALLBACK: if no match by teamId, and there's exactly one workspace
-  // in the system, use it (covers the case where workspaceId wasn't stored)
-  if (!workspace) {
-    const allWorkspaces = await prisma.slackWorkspace.findMany({ take: 2 });
-    if (allWorkspaces.length === 1) {
-      workspace = allWorkspaces[0];
-      // Backfill the workspaceId for next time
-      if (teamId && !workspace.workspaceId) {
-        await prisma.slackWorkspace.update({
-          where: { id: workspace.id },
-          data: { workspaceId: teamId },
-        });
-      }
-    }
   }
 
   if (workspace) {

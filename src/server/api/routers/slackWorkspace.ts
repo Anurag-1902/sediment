@@ -92,6 +92,22 @@ export const slackWorkspaceRouter = createTRPCRouter({
         },
       });
 
+      try {
+        const client = new WebClient(decrypt(workspace.botTokenEnc));
+        const auth = await client.auth.test();
+        if (auth.ok && auth.team_id) {
+          await prisma.slackWorkspace.update({
+            where: { id: workspace.id },
+            data: {
+              workspaceId: auth.team_id,
+              botUserId: auth.user_id ?? workspace.botUserId,
+            },
+          });
+        }
+      } catch {
+        // auth.test is best-effort; the test mutation can backfill later
+      }
+
       return {
         id: workspace.id,
         workspaceName: workspace.workspaceName,
