@@ -262,6 +262,7 @@ async function handleThreadReply(event: {
       // Determine assignee: tagged person or message sender
       let assigneeSlackId = member.slackUserId;
       let assigneeName = member.slackHandle ?? null;
+      let assigneeUserId: string | null = member.userId ?? null;
 
       if (taskData.assignee) {
         const mentionedId = extractMentionedUserId(taskData.assignee);
@@ -270,6 +271,7 @@ async function handleThreadReply(event: {
           if (mentioned) {
             assigneeSlackId = mentioned.slackUserId;
             assigneeName = mentioned.name;
+            assigneeUserId = mentioned.userId ?? null;
           }
         }
       }
@@ -290,6 +292,7 @@ async function handleThreadReply(event: {
             lastMentionedAt: new Date(),
             assigneeSlackId,
             assigneeName,
+            assignedToUserId: assigneeUserId,
           },
         });
       } else {
@@ -298,7 +301,7 @@ async function handleThreadReply(event: {
             projectId: session.projectId,
             description: taskData.description,
             status: normalizedStatus,
-            assignedToUserId: member.userId ?? null,
+            assignedToUserId: assigneeUserId,
             assigneeSlackId,
             assigneeName,
             lastMentionedAt: new Date(),

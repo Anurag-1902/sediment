@@ -150,7 +150,7 @@ export async function runFollowups() {
         const member = await prisma.projectMember.findFirst({
           where: {
             projectId: session.projectId,
-            userId: task.assignedToUserId,
+            slackUserId: task.assigneeSlackId ?? undefined,
           },
         });
 
