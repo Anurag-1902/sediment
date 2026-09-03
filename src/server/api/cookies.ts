@@ -104,3 +104,21 @@ export function createDeletedGoogleOAuthCookie(name: string) {
     expires: new Date(0),
   });
 }
+
+export const NEXTAUTH_SESSION_COOKIES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+] as const;
+
+export function createDeletedNextAuthSessionCookies() {
+  return NEXTAUTH_SESSION_COOKIES.map((name) =>
+    serializeCookie(name, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: name.startsWith("__Secure-"),
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    })
+  );
+}

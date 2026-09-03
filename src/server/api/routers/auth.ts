@@ -4,6 +4,7 @@ import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 
 import {
   createDeletedSessionCookie,
+  createDeletedNextAuthSessionCookies,
   createSessionCookie,
   SESSION_COOKIE,
 } from "../cookies";

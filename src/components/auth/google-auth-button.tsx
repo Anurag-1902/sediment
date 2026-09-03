@@ -31,7 +31,7 @@ function GoogleMark() {
 export function GoogleAuthButton({ className }: { className?: string }) {
   return (
     <a
-      href="/api/auth/google/start"
+      href="/api/auth/signin/google"
       className={cn(
         "grid h-11 w-full grid-cols-[1.25rem_1fr_1.25rem] items-center gap-3 rounded-lg border border-border-custom bg-surface-raised px-4 text-sm font-semibold text-text shadow-xs transition-colors hover:border-amber/30 hover:bg-surface-overlay focus-visible:border-amber focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber/20",
         className

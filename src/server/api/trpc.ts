@@ -1,17 +1,85 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import { decode } from "next-auth/jwt";
 import superjson from "superjson";
 
 import { getAuthClient, getPrisma } from "@/lib/krutai-server";
 import { getCookie, SESSION_COOKIE } from "./cookies";
 
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+const NEXTAUTH_SESSION_COOKIES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+];
+
+async function getNextAuthSession(cookieHeader: string | null) {
+  for (const cookieName of NEXTAUTH_SESSION_COOKIES) {
+    const token = getCookie(cookieHeader, cookieName);
+
+    if (!token || !NEXTAUTH_SECRET) {
+      continue;
+    }
+
+    try {
+      const decoded = await decode({
+        token,
+        secret: NEXTAUTH_SECRET,
+        salt: cookieName,
+      });
+
+      if (!decoded?.sub) {
+        continue;
+      }
+
+      const expiresAt = new Date((decoded.exp ?? 0) * 1000);
+
+      if (expiresAt.getTime() < Date.now()) {
+        continue;
+      }
+
+      return {
+        session: {
+          id: typeof decoded.jti === "string" ? decoded.jti : token,
+          token,
+          userId: decoded.sub,
+          expiresAt,
+          ipAddress: null,
+          userAgent: null,
+          createdAt: expiresAt,
+          updatedAt: expiresAt,
+        },
+        user: {
+          id: decoded.sub,
+          name: typeof decoded.name === "string" ? decoded.name : null,
+          email: typeof decoded.email === "string" ? decoded.email : null,
+          image: typeof decoded.picture === "string" ? decoded.picture : null,
+          emailVerified: true,
+          createdAt: expiresAt,
+          updatedAt: expiresAt,
+        },
+      };
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export async function createTRPCContext({
   req,
   resHeaders,
 }: FetchCreateContextFnOptions) {
-  const token = getCookie(req.headers.get("cookie"), SESSION_COOKIE);
+  const cookieHeader = req.headers.get("cookie");
+  const token = getCookie(cookieHeader, SESSION_COOKIE);
 
   async function getSession() {
+    const nextAuthSession = await getNextAuthSession(cookieHeader);
+
+    if (nextAuthSession) {
+      return nextAuthSession;
+    }
+
     if (!token) {
       return null;
     }
