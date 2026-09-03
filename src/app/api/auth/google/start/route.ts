@@ -13,7 +13,7 @@ import {
 import { getGoogleOAuthRedirectUri } from "../utils";
 
 export async function GET(request: Request) {
-  const auth = await getGoogleAuthClient(getGoogleOAuthRedirectUri(request));
+  const auth = await getGoogleAuthClient(getGoogleOAuthRedirectUri());
   const usesAppOwnedGoogle = hasGoogleAppCredentials();
   const oauth = usesAppOwnedGoogle
     ? auth.startGoogleOAuth()

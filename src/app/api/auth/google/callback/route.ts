@@ -26,7 +26,7 @@ function clearGoogleOAuthCookies(response: NextResponse) {
 
 function redirectToSignIn(request: Request) {
   const response = NextResponse.redirect(
-    getAuthRedirectUrl(request, "/sign-in?google=failed")
+    getAuthRedirectUrl("/sign-in?google=failed")
   );
   clearGoogleOAuthCookies(response);
   return response;
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const auth = await getGoogleAuthClient(getGoogleOAuthRedirectUri(request));
+    const auth = await getGoogleAuthClient(getGoogleOAuthRedirectUri());
 
     if (returnedSessionToken) {
       console.log("[google-callback] path decision:", {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         willUseSessionTokenPath: !!returnedSessionToken,
       });
       const session = await auth.getSession(returnedSessionToken);
-      const response = NextResponse.redirect(getAuthRedirectUrl(request, "/"));
+      const response = NextResponse.redirect(getAuthRedirectUrl("/"));
 
       response.headers.append(
         "Set-Cookie",
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       codeVerifier,
     });
     const session = await auth.getSession(result.token);
-    const response = NextResponse.redirect(getAuthRedirectUrl(request, "/"));
+    const response = NextResponse.redirect(getAuthRedirectUrl("/"));
 
     response.headers.append(
       "Set-Cookie",
