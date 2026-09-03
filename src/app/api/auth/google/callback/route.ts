@@ -69,6 +69,10 @@ export async function GET(request: Request) {
     const auth = await getGoogleAuthClient(getGoogleOAuthRedirectUri(request));
 
     if (returnedSessionToken) {
+      console.log("[google-callback] path decision:", {
+        returnedSessionToken: !!returnedSessionToken,
+        willUseSessionTokenPath: !!returnedSessionToken,
+      });
       const session = await auth.getSession(returnedSessionToken);
       const response = NextResponse.redirect(getAuthRedirectUrl(request, "/"));
 
@@ -104,7 +108,17 @@ export async function GET(request: Request) {
     clearGoogleOAuthCookies(response);
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[google-callback] OAuth failed:", {
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      hasReturnedSessionToken: !!returnedSessionToken,
+      hasCode: !!code,
+      hasState: !!state,
+      hasExpectedState: !!expectedState,
+      hasCodeVerifier: !!codeVerifier,
+      usesAppOwnedGoogle,
+    });
     return redirectToSignIn(request);
   }
 }
