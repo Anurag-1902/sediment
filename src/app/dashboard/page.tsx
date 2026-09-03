@@ -48,6 +48,15 @@ export default function DashboardPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const archiveProject = trpc.project.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Project archived");
+      utils.project.list.invalidate();
+      utils.project.listArchived.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -331,13 +340,28 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => setConfirmDeleteId(project.id)}
-                                className="flex w-full items-center gap-2 py-1 text-sm text-red-400 hover:text-red-300 transition-colors"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Delete Project
-                              </button>
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    archiveProject.mutate({ id: project.id });
+                                    setMenuOpenId(null);
+                                  }}
+                                  disabled={archiveProject.isPending}
+                                  className="flex w-full items-center gap-2 py-1 text-sm text-text-muted hover:text-text transition-colors"
+                                >
+                                  <Archive className="h-3.5 w-3.5" />
+                                  {archiveProject.isPending ? "Archiving..." : "Archive Project"}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteId(project.id)}
+                                  className="flex w-full items-center gap-2 py-1 text-sm text-red-400 hover:text-red-300 transition-colors"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  Delete Project
+                                </button>
+                              </>
                             )}
                           </div>
                         )}
