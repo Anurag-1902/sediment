@@ -309,10 +309,13 @@ export default function DashboardPage() {
                                 </p>
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() => {
-                                      deleteProject.mutate({ id: project.id });
-                                      setMenuOpenId(null);
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const id = project.id;
+                                      deleteProject.mutate({ id });
                                       setConfirmDeleteId(null);
+                                      setMenuOpenId(null);
                                     }}
                                     disabled={deleteProject.isPending}
                                     className="flex-1 rounded-md bg-red-500/20 px-2 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/30 transition-colors"
