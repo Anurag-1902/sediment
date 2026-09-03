@@ -225,11 +225,13 @@ model SyncSession {
   slackMessageTs  String?           @map("slack_message_ts")
   status          SyncSessionStatus @default(PENDING)
   followUpsSentAt DateTime?         @map("followups_sent_at")
+  dateKey         String?           @map("date_key")
   createdAt       DateTime          @default(now()) @map("created_at")
 
   updates         DevUpdate[]
   followUps       FollowUp[]
 
+  @@unique([projectId, dateKey])
   @@map("sync_session")
 }
 
