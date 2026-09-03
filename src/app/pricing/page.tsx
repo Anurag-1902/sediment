@@ -9,6 +9,18 @@ import { PricingComparison } from "./components/pricing-comparison";
 
 const plans = [
   {
+    key: "STARTER" as const,
+    name: "Starter",
+    price: "₹1",
+    period: "/month",
+    description: "Test plan for demo purposes",
+    features: [
+      "All features for 24 hours",
+      "Perfect for testing",
+    ],
+    highlighted: false,
+  },
+  {
     key: "PRO" as const,
     name: "Pro",
     price: "₹499",
