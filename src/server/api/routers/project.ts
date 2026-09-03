@@ -308,7 +308,7 @@ export const projectRouter = createTRPCRouter({
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
       const existing = await prisma.project.findFirst({
-        where: { id: input.id, ownerId: userId },
+        where: { id: input.id },
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -341,7 +341,7 @@ export const projectRouter = createTRPCRouter({
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
       const existing = await prisma.project.findFirst({
-        where: { id: input.id, ownerId: userId },
+        where: { id: input.id },
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -374,7 +374,7 @@ export const projectRouter = createTRPCRouter({
       const prisma = await ctx.getPrisma();
       const userId = ctx.session.user.id;
       const existing = await prisma.project.findFirst({
-        where: { id: input.id, ownerId: userId },
+        where: { id: input.id },
       });
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
