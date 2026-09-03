@@ -23,6 +23,21 @@ export default function SignInPage() {
 
   useEffect(() => {
     const url = new URL(window.location.href);
+    const nextAuthError = url.searchParams.get("error");
+
+    if (nextAuthError === "OAuthAccountNotLinked") {
+      toast.error("This email is already registered with a password. Sign in with your email and password, then link Google from settings.");
+      url.searchParams.delete("error");
+      window.history.replaceState(null, "", url.toString());
+      return;
+    }
+
+    if (nextAuthError) {
+      toast.error("Unable to sign in with Google.");
+      url.searchParams.delete("error");
+      window.history.replaceState(null, "", url.toString());
+      return;
+    }
 
     if (url.searchParams.get("google") !== "failed") {
       return;

@@ -421,9 +421,17 @@ export const authRouter = createTRPCRouter({
 
       ctx.resHeaders.append("Set-Cookie", createDeletedSessionCookie());
 
+      for (const cookie of createDeletedNextAuthSessionCookies()) {
+        ctx.resHeaders.append("Set-Cookie", cookie);
+      }
+
       return { ok: true };
     } catch (error) {
       ctx.resHeaders.append("Set-Cookie", createDeletedSessionCookie());
+
+      for (const cookie of createDeletedNextAuthSessionCookies()) {
+        ctx.resHeaders.append("Set-Cookie", cookie);
+      }
 
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
