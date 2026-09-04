@@ -1,3 +1,4 @@
+import cron from "node-cron";
 import { postSyncMessage, getSlackConfigForOrg, postFollowUpMessage } from "@/server/slack";
 import { getPrisma } from "@/lib/krutai-server";
 
@@ -249,4 +250,34 @@ export async function runFollowups() {
   }
 
   return { ok: true, processed: results.length, results };
+}
+
+function log(message: string) {
+  console.log(`[scheduler] ${message}`);
+}
+
+export function startScheduler() {
+  log("Starting in-process scheduler");
+
+  cron.schedule("* * * * *", async () => {
+    try {
+      log("Running standup sync...");
+      const result = await runStandupSync();
+      log(`Standup sync done. Sent: ${result.sent}`);
+    } catch (err) {
+      log(`Standup sync failed: ${err}`);
+    }
+  });
+
+  cron.schedule("* * * * *", async () => {
+    try {
+      log("Running follow-ups...");
+      const result = await runFollowups();
+      log(`Follow-ups done. Processed: ${result.processed}`);
+    } catch (err) {
+      log(`Follow-ups failed: ${err}`);
+    }
+  });
+
+  log("Scheduler jobs registered (standup sync + followups every minute)");
 }
