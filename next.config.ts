@@ -4,7 +4,7 @@ import path from "node:path";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["*.projects.krut.ai"],
   output: "standalone",
-  transpilePackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "@krutai/auth", "node-cron"],
   turbopack: {
     resolveAlias: {
       "@": path.resolve(__dirname, "src"),
