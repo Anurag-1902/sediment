@@ -83,7 +83,13 @@ export async function runStandupSync() {
 
     try {
       // Atomic dedup: one session per project per calendar day (in the project's timezone)
-      const dateKey = localTime.split("T")[0]; // e.g. "2026-09-03"
+      // Calendar date (YYYY-MM-DD) in the project's timezone — stable for the whole day
+      const dateKey = new Intl.DateTimeFormat("en-CA", {
+        timeZone: project.syncTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now); // e.g. "2026-09-04"
 
       let session;
       try {
