@@ -102,11 +102,22 @@ export async function postSyncMessage(
 ) {
   const client = await getSlackClientForOrg(organizationId);
   const text = `Daily Sync for *${projectName}* — Please reply in thread with your update.\n\n${standupPrompt}`;
+
+  console.log("[postSyncMessage] posting to channel:", channel, "org:", organizationId);
+
   const result = await client.chat.postMessage({
     channel,
     text,
     icon_emoji: ":sunrise:",
   });
+
+  console.log("[postSyncMessage] Slack response:", {
+    ok: result.ok,
+    ts: result.ts,
+    channel: result.channel,
+    error: (result as { error?: string }).error,
+  });
+
   return result;
 }
 
