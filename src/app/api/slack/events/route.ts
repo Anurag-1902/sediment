@@ -229,6 +229,7 @@ async function handleThreadReply(event: {
     try {
       console.log("Task arrived",event.text)
       extractedTasks = await extractTasks(event.text);
+      console.log("Task extracted by AI",extractedTasks)
     } catch (err) {
       console.error("[events] extractTasks failed:", err);
       extractedTasks = [];
