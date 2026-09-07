@@ -53,8 +53,10 @@ export function hasGoogleAppCredentials() {
 
 let authClientPromise: Promise<KrutAuth> | null = null;
 const googleAuthClientPromises = new Map<string, Promise<KrutAuth>>();
-let poolPromise: Promise<Pool> | null = null;
-let prismaPromise: Promise<PrismaClient> | null = null;
+const globalForDb = globalThis as unknown as {
+  poolPromise?: Promise<Pool> | null;
+  prismaPromise?: Promise<PrismaClient> | null;
+};
 
 export async function getDbUrl() {
   return requireEnv("DATABASE_URL");
@@ -115,34 +117,37 @@ export async function getGoogleAuthClient(redirectUri: string) {
 }
 
 export async function getPool() {
-  if (!poolPromise) {
-    poolPromise = (async () => {
+  if (!globalForDb.poolPromise) {
+    globalForDb.poolPromise = (async () => {
       const dbUrl = await getDbUrl();
       const isLocal = dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1");
 
       return new Pool({
         connectionString: dbUrl,
         ssl: isLocal ? undefined : { rejectUnauthorized: false },
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
       });
     })().catch((error) => {
-      poolPromise = null;
+      globalForDb.poolPromise = null;
       throw error;
     });
   }
 
-  return poolPromise;
+  return globalForDb.poolPromise;
 }
 
 export async function getPrisma() {
-  if (!prismaPromise) {
-    prismaPromise = (async () => {
+  if (!globalForDb.prismaPromise) {
+    globalForDb.prismaPromise = (async () => {
       const pool = await getPool();
       const adapter = new PrismaPg(pool);
       return new PrismaClient({ adapter });
     })().catch((error) => {
-      prismaPromise = null;
+      globalForDb.prismaPromise = null;
       throw error;
     });
   }
-  return prismaPromise;
+  return globalForDb.prismaPromise;
 }
