@@ -227,6 +227,7 @@ async function handleThreadReply(event: {
     }
 
     try {
+      console.log("Task arrived",event.text)
       extractedTasks = await extractTasks(event.text);
     } catch (err) {
       console.error("[events] extractTasks failed:", err);
