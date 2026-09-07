@@ -43,7 +43,9 @@ export async function summarizeUpdate(rawText: string) {
 export async function extractTasks(rawText: string) {
   const ai = await getAI();
   const system = `You are a task extraction assistant. Given a developer standup update, extract discrete tasks mentioned. Return ONLY valid JSON in the format: {"tasks": [{"description": string, "status": "OPEN" | "IN_PROGRESS" | "BLOCKED" | "CLOSED", "assignee": string | null}]}. Infer status from the text: "finished" = CLOSED, "blocked" = BLOCKED, "working on" = IN_PROGRESS, "plan to" = OPEN. If a task mentions or tags someone (like <@U07ABC123>), include that exact tag in the "assignee" field. If no one is tagged for a task, set assignee to null.`;
+  console.log("about to call AI")
   const result = await ai.chat<string>(rawText, { system });
+  console.log("AI response recieved for task")
   console.log("[extractTasks] raw AI output:", result);
   try {
     const cleaned = result
