@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleSelector } from "@/components/ui/role-selector";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Clock, Users, AlertTriangle, MessageCircle } from "lucide-react";
+import { Clock, Users, AlertTriangle, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProjectOverviewProps {
@@ -45,6 +46,14 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
     onError: (err) => toast.error(err.message),
   });
   const isManager = canManageProjects(currentUserRole?.role);
+  const triggerSync = trpc.project.triggerSync.useMutation({
+    onSuccess: () => {
+      toast.success("Standup sent to Slack");
+      utils.project.stats.invalidate({ id: projectId });
+      utils.project.get.invalidate({ id: projectId });
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const recentUpdates = updates ?? [];
   return (
     <div className="space-y-6">
@@ -84,8 +93,16 @@ export function ProjectOverview({ stats, project, projectId }: ProjectOverviewPr
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Sync Details</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => triggerSync.mutate({ id: projectId })}
+            disabled={triggerSync.isPending}
+          >
+            <Send className="mr-2 h-4 w-4" />
+            {triggerSync.isPending ? "Sending..." : "Send Sync Now"}
+          </Button>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="flex items-center gap-2">

@@ -419,6 +419,85 @@ export const projectRouter = createTRPCRouter({
       return { ok: true };
     }),
 
+  triggerSync: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const prisma = await ctx.getPrisma();
+      const userId = ctx.session.user.id;
+
+      const project = await prisma.project.findFirst({
+        where: { id: input.id },
+        include: { organization: { select: { plan: true, planExpiresAt: true } } },
+      });
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      const membership = await prisma.organizationMember.findFirst({
+        where: { userId, organizationId: project.organizationId },
+      });
+      if (!membership) throw new TRPCError({ code: "FORBIDDEN", message: "Not a member" });
+
+      // Plan check (same grace logic as scheduler)
+      const EXPIRY_GRACE_MS = 60 * 60 * 1000;
+      if (
+        !project.organization?.plan ||
+        project.organization.plan === "FREE" ||
+        (project.organization.planExpiresAt &&
+          new Date(project.organization.planExpiresAt).getTime() + EXPIRY_GRACE_MS < Date.now())
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Active plan required to send a sync" });
+      }
+
+      const now = new Date();
+      const dateKey = new Intl.DateTimeFormat("en-CA", {
+        timeZone: project.syncTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now);
+
+      const { postSyncMessage } = await import("@/server/slack");
+
+      let session;
+      try {
+        // Manual triggers use a unique dateKey so multiple syncs per day are allowed
+        session = await prisma.syncSession.create({
+          data: {
+            projectId: project.id,
+            scheduledAt: now,
+            status: "ACTIVE",
+            dateKey: `${dateKey}-manual-${Date.now()}`,
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2002") {
+          throw new TRPCError({ code: "CONFLICT", message: "A sync has already been sent for this project today" });
+        }
+        throw err;
+      }
+
+      try {
+        const result = await postSyncMessage(
+          project.slackChannelId,
+          project.name,
+          project.organizationId,
+          project.standupPrompt
+        );
+        if (!result.ts) {
+          await prisma.syncSession.delete({ where: { id: session.id } });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Slack did not return a message timestamp" });
+        }
+        await prisma.syncSession.update({ where: { id: session.id }, data: { slackMessageTs: result.ts } });
+        return { ok: true, ts: result.ts };
+      } catch (err: any) {
+        await prisma.syncSession.delete({ where: { id: session.id } });
+        const slackError = err?.data?.error;
+        if (slackError === "not_in_channel") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "The Sediment bot is not in this project's Slack channel. Add it and try again." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: slackError ?? "Failed to send sync" });
+      }
+    }),
+
   stats: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
